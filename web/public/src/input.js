@@ -1,11 +1,12 @@
 export function createInput(onChange = () => {}) {
   const keys = new Set();
+  const keyOrder = [];
   const touch = { active: false, x: 0, y: 0 };
   const joystick = document.querySelector("#joystick");
   const stick = document.querySelector("#stick");
 
-  window.addEventListener("keydown", event => updateKey(keys, event.key, true, onChange));
-  window.addEventListener("keyup", event => updateKey(keys, event.key, false, onChange));
+  window.addEventListener("keydown", event => updateKey(keys, keyOrder, event.key, true, onChange));
+  window.addEventListener("keyup", event => updateKey(keys, keyOrder, event.key, false, onChange));
   if (joystick && stick) {
     joystick.addEventListener("pointerdown", event => startTouch(event, joystick, touch, onChange));
     joystick.addEventListener("pointermove", event => moveTouch(event, joystick, stick, touch, onChange));
@@ -15,29 +16,51 @@ export function createInput(onChange = () => {}) {
 
   return {
     vector() {
-      const keyboard = keyboardVector(keys);
+      const keyboard = keyboardVector(keys, keyOrder);
       return touch.active ? { x: touch.x, y: touch.y } : keyboard;
     }
   };
 }
 
-function updateKey(keys, key, pressed, onChange) {
+const LEFT_KEYS = ["a", "arrowleft"];
+const RIGHT_KEYS = ["d", "arrowright"];
+const UP_KEYS = ["w", "arrowup"];
+const DOWN_KEYS = ["s", "arrowdown"];
+
+function updateKey(keys, keyOrder, key, pressed, onChange) {
   const value = key.toLowerCase();
-  const before = keys.size;
+  if (!movementKey(value)) return;
+  const before = keyboardVector(keys, keyOrder);
+  if (pressed && !keys.has(value)) keyOrder.push(value);
   if (pressed) keys.add(value);
-  else keys.delete(value);
-  if (movementKey(value) && keys.size !== before) onChange();
+  else {
+    keys.delete(value);
+    removeKey(keyOrder, value);
+  }
+  const after = keyboardVector(keys, keyOrder);
+  if (Math.abs(after.x - before.x) > 0.01 || Math.abs(after.y - before.y) > 0.01) onChange();
 }
 
-function keyboardVector(keys) {
-  let x = 0;
-  let y = 0;
-  if (keys.has("a") || keys.has("arrowleft")) x -= 1;
-  if (keys.has("d") || keys.has("arrowright")) x += 1;
-  if (keys.has("w") || keys.has("arrowup")) y -= 1;
-  if (keys.has("s") || keys.has("arrowdown")) y += 1;
+function keyboardVector(keys, keyOrder) {
+  const x = axisValue(keys, keyOrder, LEFT_KEYS, RIGHT_KEYS);
+  const y = axisValue(keys, keyOrder, UP_KEYS, DOWN_KEYS);
   const length = Math.hypot(x, y) || 1;
   return { x: x / length, y: y / length };
+}
+
+function axisValue(keys, keyOrder, negativeKeys, positiveKeys) {
+  for (let i = keyOrder.length - 1; i >= 0; i -= 1) {
+    const key = keyOrder[i];
+    if (!keys.has(key)) continue;
+    if (negativeKeys.includes(key)) return -1;
+    if (positiveKeys.includes(key)) return 1;
+  }
+  return 0;
+}
+
+function removeKey(keyOrder, value) {
+  const index = keyOrder.indexOf(value);
+  if (index !== -1) keyOrder.splice(index, 1);
 }
 
 function startTouch(event, joystick, touch, onChange) {
