@@ -59,11 +59,11 @@ function clear(ctx, world, showBackground) {
 
 function drawArena(ctx, world, quality) {
   if (!quality) return;
-  ctx.strokeStyle = "rgba(240,239,230,0.05)";
+  ctx.strokeStyle = "rgba(190,220,255,0.035)";
   ctx.lineWidth = 1;
-  for (let x = 0; x < world.width; x += 48) line(ctx, x, 0, x, world.height);
-  for (let y = 0; y < world.height; y += 48) line(ctx, 0, y, world.width, y);
-  ctx.strokeStyle = "rgba(240,239,230,0.22)";
+  for (let x = 0; x < world.width; x += 96) line(ctx, x, 0, x, world.height);
+  for (let y = 0; y < world.height; y += 96) line(ctx, 0, y, world.width, y);
+  ctx.strokeStyle = "rgba(210,235,255,0.18)";
   ctx.lineWidth = 4;
   ctx.strokeRect(16, 16, world.width - 32, world.height - 32);
 }
@@ -96,11 +96,11 @@ function drawReadabilityMasks(ctx, world) {
 function drawChallenge(ctx, state) {
   if (!state.challenge) return;
   const urgency = 1 - state.challenge.remaining / state.challenge.duration;
-  const pulse = 0.18 + Math.sin(performance.now() / 58) * 0.09 + urgency * 0.16;
+  const pulse = 0.3 + Math.sin(performance.now() / 26) * 0.16 + urgency * 0.28;
   state.challenge.assignments.forEach(item => drawZone(ctx, item.zone, state.world, item.color, pulse));
-  ctx.strokeStyle = "rgba(244,239,229,0.52)";
-  ctx.lineWidth = 6;
-  ctx.setLineDash([24, 16]);
+  ctx.strokeStyle = urgency > 0.55 ? "rgba(255,116,95,0.86)" : "rgba(244,239,229,0.62)";
+  ctx.lineWidth = urgency > 0.55 ? 10 : 7;
+  ctx.setLineDash([18, 10]);
   drawSplitLine(ctx, state.challenge.split, state.world);
   ctx.setLineDash([]);
 }
@@ -270,7 +270,7 @@ function drawTension(ctx, state) {
 function drawOverlay(ctx, canvas, state) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (state.challenge) drawChallengeTimer(ctx, canvas, state.challenge);
-  if (state.status !== "running") drawCenter(ctx, canvas, state.message);
+  if (state.status !== "running" && state.status !== "gameover") drawCenter(ctx, canvas, state.message);
 }
 
 function drawChallengeTimer(ctx, canvas, challenge) {

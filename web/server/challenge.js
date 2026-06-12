@@ -1,12 +1,13 @@
 const WORLD = { width: 1280, height: 720 };
+const CHALLENGE_DURATION = 3.2;
 
 export function createChallenge(players, count) {
   const split = pickSplit(count);
   const firstPlayer = Math.random() > 0.5 ? players[0] : players[1];
   const secondPlayer = players.find(player => player.id !== firstPlayer.id);
   return {
-    duration: 4.5,
-    remaining: 4.5,
+    duration: CHALLENGE_DURATION,
+    remaining: CHALLENGE_DURATION,
     split,
     assignments: [
       { playerId: firstPlayer.id, color: firstPlayer.color, zone: split.zones[0] },

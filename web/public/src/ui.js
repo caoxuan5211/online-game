@@ -18,6 +18,10 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
     ready = false;
     onRestart();
   });
+  [nodes.resultRestartButton, nodes.resultLobbyButton].forEach(button => button.addEventListener("click", () => {
+    ready = false;
+    onRestart();
+  }));
 
   return {
     setStatus(text) {
@@ -37,10 +41,11 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
       const me = state.players.find(player => player.id === session.playerId);
       if (me) {
         selectedColor = me.color;
+        if (!nodes.nameInput.value || nodes.nameInput.value === "Player") nodes.nameInput.value = me.name;
         syncSelectedColor(nodes, me.color);
       }
       updateStateText(nodes, state, session.playerId);
-      updateLobby(nodes, state);
+      updateLobby(nodes, state, session.playerId);
       ready = updateReadyButton(nodes, state, session.playerId, ready);
     },
     updateRooms(rooms) {
@@ -92,6 +97,11 @@ function getNodes() {
     timerText: document.querySelector("#timerText"),
     challengeText: document.querySelector("#challengeText"),
     playerText: document.querySelector("#playerText"),
+    resultPanel: document.querySelector("#resultPanel"),
+    resultReason: document.querySelector("#resultReason"),
+    resultStats: document.querySelector("#resultStats"),
+    resultRestartButton: document.querySelector("#resultRestartButton"),
+    resultLobbyButton: document.querySelector("#resultLobbyButton"),
     countdownOverlay: document.querySelector("#countdownOverlay"),
     countdownNumber: document.querySelector("#countdownNumber"),
     profileName: document.querySelector("#profileName"),
@@ -106,6 +116,7 @@ function getNodes() {
     shakeToggle: document.querySelector("#shakeToggle"),
     nameInput: document.querySelector("#nameInput"),
     saveProfileButton: document.querySelector("#saveProfileButton"),
+    copyRoomButton: document.querySelector("#copyRoomButton"),
     profileError: document.querySelector("#profileError"),
     customColorInput: document.querySelector("#customColorInput"),
     readyButton: document.querySelector("#readyButton"),
@@ -120,6 +131,7 @@ function bindShell(nodes) {
   nodes.helpButton.addEventListener("click", () => nodes.helpPanel.classList.toggle("open"));
   nodes.closeHelpButton.addEventListener("click", () => nodes.helpPanel.classList.remove("open"));
   [nodes.backHomeButton, nodes.backGameButton].forEach(button => button.addEventListener("click", () => location.reload()));
+  nodes.copyRoomButton.addEventListener("click", () => copyRoom(nodes));
 }
 
 function bindProfile(nodes, getColor, setColor, onProfile) {
@@ -161,7 +173,7 @@ function bindSettings(nodes, values, onSettings) {
 }
 
 function renderRooms(nodes, rooms, join) {
-  const open = rooms.filter(room => room.status !== "running" && room.players < room.capacity);
+  const open = rooms.filter(room => room.status === "waiting" && room.players < room.capacity);
   nodes.roomList.innerHTML = "";
   if (open.length === 0) {
     nodes.roomList.innerHTML = `<div class="empty-room">暂无可加入房间</div>`;
@@ -188,17 +200,18 @@ function updateStateText(nodes, state, playerId) {
   }
   nodes.challengeText.textContent = challengeLabel(state);
   updateCountdown(nodes, state);
+  updateResultPanel(nodes, state);
   if (state.status === "running") showMode(nodes, "game");
   if (state.status === "waiting" || state.status === "countdown") showMode(nodes, "lobby");
   if (state.status === "gameover") showMode(nodes, "game");
 }
 
-function updateLobby(nodes, state) {
+function updateLobby(nodes, state, playerId) {
   nodes.lobbyPlayers.innerHTML = "";
   state.players.forEach(player => {
     const row = document.createElement("div");
     row.className = `lobby-player ${player.ready ? "is-ready" : "is-waiting"}`;
-    row.innerHTML = `<span style="--player:${player.color}"></span><strong>${player.name}</strong><small>${player.ready ? "READY" : "WAITING"}</small>`;
+    row.innerHTML = `<span style="--player:${player.color}"></span><strong>${player.name}</strong><em>${roleText(player, playerId)}</em><small>${player.ready ? "READY" : "WAITING"}</small>`;
     nodes.lobbyPlayers.appendChild(row);
   });
 }
@@ -234,12 +247,31 @@ function updateCountdown(nodes, state) {
   if (active) nodes.countdownNumber.textContent = Math.max(1, Math.ceil(state.countdown));
 }
 
+function updateResultPanel(nodes, state) {
+  const result = state.result;
+  nodes.resultPanel.classList.toggle("hidden", state.status !== "gameover" || !result);
+  if (!result) return;
+  nodes.resultReason.textContent = result.reason;
+  nodes.resultStats.textContent = `${result.elapsed}s · ${result.difficulty}`;
+}
+
 function showProfileError(nodes, message) {
   nodes.profileError.textContent = message || "";
 }
 
 function hasColorConflict(players) {
   return new Set(players.map(player => player.color)).size !== players.length;
+}
+
+function roleText(player, playerId) {
+  const role = player.id === playerId ? "我" : "队友";
+  return player.host ? `${role} · 房主` : role;
+}
+
+function copyRoom(nodes) {
+  const room = nodes.profileRoom.textContent;
+  navigator.clipboard?.writeText(room);
+  nodes.profileError.textContent = `已复制 ${room}`;
 }
 
 function syncSettingsControls(nodes, values) {

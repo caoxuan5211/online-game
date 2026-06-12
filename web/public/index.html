@@ -57,6 +57,7 @@
           <strong>等待大厅</strong>
           <button id="backHomeButton" class="circle-button" aria-label="返回主页面">←</button>
         </div>
+        <div class="rule-tip">保持弹性连线，避开障碍；颜色区域闪烁时，回到自己颜色对应的区域。</div>
         <div class="lobby-grid">
           <label>昵称 <input id="nameInput" maxlength="16" value="Player" /></label>
           <div>
@@ -71,7 +72,10 @@
             </div>
           </div>
         </div>
-        <button id="saveProfileButton" class="save-button">保存角色</button>
+        <div class="lobby-actions">
+          <button id="saveProfileButton" class="save-button">保存角色</button>
+          <button id="copyRoomButton" class="save-button">复制房间号</button>
+        </div>
         <div id="profileError" class="profile-error" aria-live="polite"></div>
         <div id="lobbyPlayers" class="lobby-players"></div>
         <button id="readyButton" class="ready-button" disabled>准备</button>
@@ -91,6 +95,16 @@
       <section class="game-controls">
         <button id="restartButton" disabled>重开</button>
         <span id="playerText">未加入</span>
+      </section>
+
+      <section id="resultPanel" class="result-panel hidden" aria-label="失败复盘">
+        <strong>本局结束</strong>
+        <span id="resultReason">碰撞失败</span>
+        <small id="resultStats">0s · 标准</small>
+        <div>
+          <button id="resultRestartButton">重开</button>
+          <button id="resultLobbyButton">返回大厅</button>
+        </div>
       </section>
 
       <div id="joystick" class="joystick" aria-label="移动摇杆">

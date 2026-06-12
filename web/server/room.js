@@ -7,6 +7,9 @@ import {
 export function createGameRoom(id) {
   return new GameRoom(id);
 }
+const FIRST_CHALLENGE_DELAY = [2.6, 4.6];
+const REPEAT_CHALLENGE_DELAY = [3.2, 6.2];
+
 class GameRoom {
   constructor(id) {
     this.id = id;
@@ -20,14 +23,16 @@ class GameRoom {
     this.challenge = null;
     this.challengeCount = 0;
     this.countdown = 0;
-    this.nextChallenge = randomBetween(5, 10);
+    this.lastResult = null;
+    this.nextChallenge = randomBetween(...FIRST_CHALLENGE_DELAY);
     this.message = "等待两名玩家准备";
   }
 
   addPlayer(id, options) {
     const active = this.activePlayers();
     const color = pickColor(options.color, active);
-    const player = createPlayer(id, options.name, color, active.length);
+    const name = defaultName(options.name, active.length);
+    const player = createPlayer(id, name, color, active.length);
     this.players.set(id, player);
     this.status = this.status === "gameover" ? "waiting" : this.status;
   }
@@ -61,7 +66,7 @@ class GameRoom {
     if (!player || this.status === "running") return;
     const sameColor = this.activePlayers().some(p => p.id !== id && p.color === options.color);
     if (sameColor) return { ok: false, message: "这个颜色已经被队友选择" };
-    player.name = options.name;
+    player.name = defaultName(options.name, this.activePlayers().findIndex(p => p.id === id));
     player.color = pickColor(options.color, this.activePlayers().filter(p => p.id !== id));
     if (this.status === "countdown") this.cancelCountdown();
     return { ok: true };
@@ -83,7 +88,8 @@ class GameRoom {
     this.tick = 0;
     this.countdown = 0;
     this.challengeCount = 0;
-    this.nextChallenge = randomBetween(4, 8);
+    this.lastResult = null;
+    this.nextChallenge = randomBetween(...FIRST_CHALLENGE_DELAY);
     this.message = "等待两名玩家准备";
     current.forEach((p, index) => this.players.set(p.id, createPlayer(p.id, p.name, p.color, index)));
   }
@@ -96,15 +102,13 @@ class GameRoom {
       tick: this.tick,
       elapsed: Math.round(this.elapsed),
       message: this.message,
-      settings: {
-        difficulty: this.settings.difficulty,
-        difficultyLabel: DIFFICULTIES[this.settings.difficulty].label
-      },
+      settings: { difficulty: this.settings.difficulty, difficultyLabel: DIFFICULTIES[this.settings.difficulty].label },
       nextChallengeIn: Math.max(0, this.nextChallenge),
       countdown: Math.max(0, this.countdown),
+      result: this.lastResult,
       challenge: this.challenge,
       tether: this.tetherState(),
-      players: [...this.players.values()].map(publicPlayer),
+      players: this.publicPlayers(),
       obstacles: this.obstacles
     };
   }
@@ -139,22 +143,29 @@ class GameRoom {
     this.spawnTimer = DIFFICULTIES[this.settings.difficulty].warmup;
     this.challenge = null;
     this.challengeCount = 0;
-    this.nextChallenge = randomBetween(4, 8);
+    this.lastResult = null;
+    this.nextChallenge = randomBetween(...FIRST_CHALLENGE_DELAY);
     this.message = "躲避障碍，等待颜色区域";
     this.activePlayers().forEach((p, index) => resetPlayer(p, index));
   }
 
-  activePlayers() {
-    return [...this.players.values()].slice(0, 2);
+  activePlayers() { return [...this.players.values()].slice(0, 2); }
+
+  publicPlayers() {
+    const hostId = this.activePlayers()[0]?.id;
+    return [...this.players.values()].map((player, index) => publicPlayer(player, { index, host: player.id === hostId }));
   }
 
-  canJoin(id) {
-    return this.players.has(id) || (this.status === "waiting" && this.activePlayers().length < 2);
-  }
+  canJoin(id) { return this.players.has(id) || (this.status === "waiting" && this.activePlayers().length < 2); }
 
   endGame(reason) {
     this.status = "gameover";
     this.message = reason;
+    this.lastResult = {
+      reason,
+      elapsed: Math.round(this.elapsed),
+      difficulty: DIFFICULTIES[this.settings.difficulty].label
+    };
   }
 
   tetherState() {
@@ -169,19 +180,12 @@ class GameRoom {
 
   publicSummary() {
     const active = this.activePlayers();
-    return {
-      id: this.id,
-      status: this.status,
-      players: active.length,
-      capacity: 2,
-      difficulty: DIFFICULTIES[this.settings.difficulty].label
-    };
+    return { id: this.id, status: this.status, players: active.length, capacity: 2, difficulty: DIFFICULTIES[this.settings.difficulty].label };
   }
 
   hasUniqueColor(id) {
     const player = this.players.get(id);
-    if (!player) return false;
-    return !this.activePlayers().some(p => p.id !== id && p.color === player.color);
+    return Boolean(player) && !this.activePlayers().some(p => p.id !== id && p.color === player.color);
   }
 }
 
@@ -275,7 +279,7 @@ function finishChallenge(room) {
   });
   if (failed) room.endGame(`${failed.name} 没有及时进入颜色区域`);
   room.challenge = null;
-  room.nextChallenge = randomBetween(6, 12);
+  room.nextChallenge = randomBetween(...REPEAT_CHALLENGE_DELAY);
 }
 
 function checkFailures(room, players) {
@@ -284,6 +288,9 @@ function checkFailures(room, players) {
   if (hit) room.endGame(`${hit.name} 撞上了障碍物`);
 }
 
-function uniqueColors(players) {
-  return new Set(players.map(p => p.color)).size === players.length;
+function uniqueColors(players) { return new Set(players.map(p => p.color)).size === players.length; }
+
+function defaultName(name, index) {
+  const value = String(name || "").trim();
+  return !value || value === "Player" ? `Player ${index + 1}` : value;
 }

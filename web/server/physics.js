@@ -57,11 +57,13 @@ export function createObstacle(time, difficulty) {
   };
 }
 
-export function publicPlayer(player) {
+export function publicPlayer(player, meta = {}) {
   return {
     id: player.id,
     name: player.name,
     color: player.color,
+    index: meta.index || 0,
+    host: Boolean(meta.host),
     ready: player.ready,
     x: player.x,
     y: player.y,
