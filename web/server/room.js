@@ -10,6 +10,8 @@ export function createGameRoom(id) {
 }
 const FIRST_CHALLENGE_DELAY = [2.6, 4.6];
 const REPEAT_CHALLENGE_DELAY = [3.2, 6.2];
+const TETHER_PULL = 0.42;
+const TETHER_DAMPING = 0.58;
 
 class GameRoom {
   constructor(id) {
@@ -221,10 +223,11 @@ function applyElasticBand(players, dt) {
   const dy = b.y - a.y;
   const dist = Math.max(1, Math.hypot(dx, dy));
   const stretch = dist - REST_LENGTH;
-  if (stretch <= -60) return;
-  const force = stretch * 0.66 * dt;
+  if (stretch <= 0) return;
   const nx = dx / dist;
   const ny = dy / dist;
+  const relative = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+  const force = (stretch * TETHER_PULL + Math.max(0, relative) * TETHER_DAMPING) * dt;
   a.vx += force * nx;
   a.vy += force * ny;
   b.vx -= force * nx;

@@ -1,4 +1,4 @@
-const BUILD = "20260613-smooth6";
+const BUILD = "20260613-smooth7";
 const ASSETS = [
   { url: "./assets/background.png", type: "image", label: "背景图" },
   { url: versioned("./styles.css"), label: "样式" },

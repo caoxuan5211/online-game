@@ -6,11 +6,22 @@
     <meta name="description" content="Elastic Duo 是一个双人联机躲避游戏，玩家由弹力带连接并在颜色区域倒计时中配合移动。" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="./assets/background.png" as="image" />
-    <link rel="modulepreload" href="./src/main.js?v=20260613-smooth6" />
+    <link rel="preload" href="/socket.io/socket.io.js" as="script" />
+    <link rel="modulepreload" href="./src/main.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/input.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/prediction.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/smoothing.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/render.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/render-cache.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/render-quality.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/render-utils.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/settings.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/ui.js?v=20260613-smooth7" />
+    <link rel="modulepreload" href="./src/preload.js?v=20260613-smooth7" />
     <title>Elastic Duo</title>
-    <link rel="stylesheet" href="./styles.css?v=20260613-smooth6" />
-    <link rel="stylesheet" href="./loader.css?v=20260613-smooth6" />
-    <link rel="stylesheet" href="./feedback.css?v=20260613-smooth6" />
+    <link rel="stylesheet" href="./styles.css?v=20260613-smooth7" />
+    <link rel="stylesheet" href="./loader.css?v=20260613-smooth7" />
+    <link rel="stylesheet" href="./feedback.css?v=20260613-smooth7" />
   </head>
   <body>
     <section id="loaderPanel" class="loader-panel" aria-live="polite">
@@ -160,7 +171,7 @@
     </main>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="./config.js?v=20260613-smooth6"></script>
-    <script type="module" src="./src/main.js?v=20260613-smooth6"></script>
+    <script src="./config.js?v=20260613-smooth7"></script>
+    <script type="module" src="./src/main.js?v=20260613-smooth7"></script>
   </body>
 </html>
