@@ -4,6 +4,11 @@ const PLAYER_RADIUS = 18;
 const REST_LENGTH = 190;
 const FAIL_DISTANCE = 390;
 const MAX_OBSTACLES = 42;
+const DIFFICULTIES = {
+  easy: { label: "轻松", speed: 0.82, spawnMin: 0.78, spawnMax: 1.22, warmup: 2.8 },
+  normal: { label: "标准", speed: 1, spawnMin: 0.52, spawnMax: 0.94, warmup: 2.1 },
+  hard: { label: "高压", speed: 1.18, spawnMin: 0.34, spawnMax: 0.7, warmup: 1.55 }
+};
 
 export function createGameRoom(id) {
   return new GameRoom(id);
@@ -18,6 +23,7 @@ class GameRoom {
     this.elapsed = 0;
     this.tick = 0;
     this.spawnTimer = 1;
+    this.settings = { difficulty: "normal" };
     this.challenge = null;
     this.nextChallenge = randomBetween(5, 10);
     this.message = "等待两名玩家准备";
@@ -51,6 +57,12 @@ class GameRoom {
     player.input = normalizeInput(input);
   }
 
+  setSettings(settings = {}) {
+    if (!DIFFICULTIES[settings.difficulty]) return;
+    if (this.status === "running") return;
+    this.settings.difficulty = settings.difficulty;
+  }
+
   restart() {
     const current = [...this.players.values()].map(p => ({ id: p.id, name: p.name, color: p.color }));
     this.players.clear();
@@ -71,6 +83,10 @@ class GameRoom {
       tick: this.tick,
       elapsed: Math.round(this.elapsed),
       message: this.message,
+      settings: {
+        difficulty: this.settings.difficulty,
+        difficultyLabel: DIFFICULTIES[this.settings.difficulty].label
+      },
       nextChallengeIn: Math.max(0, this.nextChallenge),
       challenge: this.challenge,
       tether: this.tetherState(),
@@ -89,7 +105,7 @@ class GameRoom {
     this.elapsed = 0;
     this.tick = 0;
     this.obstacles = [];
-    this.spawnTimer = 1.9;
+    this.spawnTimer = DIFFICULTIES[this.settings.difficulty].warmup;
     this.challenge = null;
     this.nextChallenge = randomBetween(4, 8);
     this.message = "躲避障碍，等待颜色区域";
@@ -160,10 +176,11 @@ function applyElasticBand(players, dt) {
 }
 
 function updateObstacles(room, dt) {
+  const difficulty = DIFFICULTIES[room.settings.difficulty];
   room.spawnTimer -= dt;
   if (room.spawnTimer <= 0) {
-    room.obstacles.push(createObstacle(room.elapsed));
-    room.spawnTimer = randomBetween(0.38, 0.86);
+    room.obstacles.push(createObstacle(room.elapsed, difficulty));
+    room.spawnTimer = randomBetween(difficulty.spawnMin, difficulty.spawnMax);
   }
   room.obstacles.forEach(o => {
     o.x += o.vx * dt;
@@ -224,9 +241,9 @@ function normalizeInput(input) {
   return length > 1 ? { x: x / length, y: y / length } : { x, y };
 }
 
-function createObstacle(time) {
+function createObstacle(time, difficulty) {
   const edge = Math.floor(Math.random() * 4);
-  const speed = randomBetween(205, 335) + Math.min(time * 3.6, 150);
+  const speed = (randomBetween(205, 335) + Math.min(time * 3.6, 150)) * difficulty.speed;
   const target = { x: randomBetween(280, 1000), y: randomBetween(160, 560) };
   const start = obstacleStart(edge);
   const angle = Math.atan2(target.y - start.y, target.x - start.x);

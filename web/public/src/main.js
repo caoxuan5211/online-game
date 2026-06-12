@@ -1,20 +1,27 @@
 import { drawGame } from "./render.js";
 import { createInput } from "./input.js";
+import { createSettings } from "./settings.js";
 import { createStateBuffer } from "./smoothing.js";
 import { setupUi } from "./ui.js";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");
 const input = createInput();
+const settings = createSettings();
 const socket = io(config.serverUrl || location.origin, { transports: ["websocket", "polling"] });
 const buffer = createStateBuffer();
 const session = { playerId: null, color: "red", state: null, joined: false };
 
 const ui = setupUi({
   session,
+  settings,
   onJoin: joinRoom,
   onReady: ready => socket.emit("setReady", ready),
-  onRestart: () => socket.emit("restart")
+  onRestart: () => socket.emit("restart"),
+  onSettings: next => {
+    settings.update(next);
+    if (session.joined) socket.emit("setSettings", { difficulty: settings.values.difficulty });
+  }
 });
 
 socket.on("connect", () => ui.setStatus("已连接，进入房间后开始"));
@@ -37,11 +44,11 @@ setInterval(() => {
 
 function joinRoom(options) {
   session.color = options.color;
-  socket.emit("joinRoom", options);
+  socket.emit("joinRoom", { ...options, settings: { difficulty: settings.values.difficulty } });
 }
 
 function frame() {
-  drawGame(canvas, buffer.current() || session.state, session.playerId);
+  drawGame(canvas, buffer.current() || session.state, session.playerId, settings.values);
   requestAnimationFrame(frame);
 }
 

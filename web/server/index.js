@@ -20,6 +20,7 @@ app.use(express.static(join(__dirname, "../public")));
 io.on("connection", socket => {
   socket.on("joinRoom", data => joinRoom(socket, data));
   socket.on("setReady", ready => setReady(socket, ready));
+  socket.on("setSettings", settings => setSettings(socket, settings));
   socket.on("input", input => setInput(socket, input));
   socket.on("restart", () => restart(socket));
   socket.on("disconnect", () => leaveRoom(socket));
@@ -48,6 +49,7 @@ function joinRoom(socket, data = {}) {
   socket.join(roomId);
   socket.data.roomId = roomId;
   room.addPlayer(socket.id, { color, name });
+  room.setSettings(data.settings);
   socket.emit("joined", { playerId: socket.id, roomId });
   io.to(roomId).emit("state", room.publicState());
 }
@@ -56,6 +58,12 @@ function setReady(socket, ready) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
   room.setReady(socket.id, Boolean(ready));
+}
+
+function setSettings(socket, settings = {}) {
+  const room = rooms.get(socket.data.roomId);
+  if (!room) return;
+  room.setSettings(settings);
 }
 
 function setInput(socket, input = {}) {

@@ -1,8 +1,9 @@
-export function setupUi({ session, defaultServer, onJoin, onReady, onRestart }) {
+export function setupUi({ session, settings, defaultServer, onJoin, onReady, onRestart, onSettings }) {
   const nodes = getNodes();
   let selectedColor = "red";
   let ready = false;
   nodes.serverInput.value = localStorage.getItem("serverUrl") || defaultServer;
+  bindSettings(nodes, settings.values, onSettings);
 
   nodes.colorButtons.forEach(button => {
     button.addEventListener("click", () => {
@@ -55,6 +56,14 @@ function getNodes() {
     timerText: document.querySelector("#timerText"),
     challengeText: document.querySelector("#challengeText"),
     playerText: document.querySelector("#playerText"),
+    settingsButton: document.querySelector("#settingsButton"),
+    settingsPanel: document.querySelector("#settingsPanel"),
+    closeSettingsButton: document.querySelector("#closeSettingsButton"),
+    difficultySelect: document.querySelector("#difficultySelect"),
+    qualitySelect: document.querySelector("#qualitySelect"),
+    backgroundToggle: document.querySelector("#backgroundToggle"),
+    shakeToggle: document.querySelector("#shakeToggle"),
+    joystickToggle: document.querySelector("#joystickToggle"),
     nameInput: document.querySelector("#nameInput"),
     roomInput: document.querySelector("#roomInput"),
     serverInput: document.querySelector("#serverInput"),
@@ -73,8 +82,9 @@ function updateStateText(nodes, state, playerId) {
   nodes.statusText.textContent = state.message;
   nodes.timerText.textContent = `${state.elapsed}s`;
   nodes.restartButton.disabled = state.status !== "gameover";
+  nodes.difficultySelect.disabled = state.status === "running";
   const me = state.players.find(player => player.id === playerId);
-  if (me) nodes.playerText.textContent = `${me.name} / ${colorName(me.color)}`;
+  if (me) nodes.playerText.textContent = `${me.name} / ${colorName(me.color)} / ${state.settings.difficultyLabel}`;
   nodes.challengeText.textContent = challengeLabel(state);
 }
 
@@ -96,4 +106,34 @@ function colorName(color) {
   if (color === "red") return "红色";
   if (color === "blue") return "蓝色";
   return "观战";
+}
+
+function bindSettings(nodes, values, onSettings) {
+  syncSettingsControls(nodes, values);
+  nodes.settingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
+  nodes.closeSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.remove("open"));
+  [nodes.difficultySelect, nodes.qualitySelect].forEach(node => {
+    node.addEventListener("change", () => onSettings(readSettings(nodes)));
+  });
+  [nodes.backgroundToggle, nodes.shakeToggle, nodes.joystickToggle].forEach(node => {
+    node.addEventListener("change", () => onSettings(readSettings(nodes)));
+  });
+}
+
+function syncSettingsControls(nodes, values) {
+  nodes.difficultySelect.value = values.difficulty;
+  nodes.qualitySelect.value = values.quality;
+  nodes.backgroundToggle.checked = values.showBackground;
+  nodes.shakeToggle.checked = values.screenShake;
+  nodes.joystickToggle.checked = values.showJoystick;
+}
+
+function readSettings(nodes) {
+  return {
+    difficulty: nodes.difficultySelect.value,
+    quality: nodes.qualitySelect.value,
+    showBackground: nodes.backgroundToggle.checked,
+    screenShake: nodes.shakeToggle.checked,
+    showJoystick: nodes.joystickToggle.checked
+  };
 }

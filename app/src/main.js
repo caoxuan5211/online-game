@@ -1,22 +1,29 @@
 import { io } from "socket.io-client";
 import { drawGame } from "./render.js";
 import { createInput } from "./input.js";
+import { createSettings } from "./settings.js";
 import { createStateBuffer } from "./smoothing.js";
 import { setupUi } from "./ui.js";
 
 const DEFAULT_SERVER = import.meta.env.VITE_GAME_SERVER || "http://160.25.134.111:3000";
 const canvas = document.querySelector("#gameCanvas");
 const input = createInput();
+const settings = createSettings();
 const buffer = createStateBuffer();
 const session = { playerId: null, color: "red", state: null, joined: false };
 let socket = null;
 
 const ui = setupUi({
   session,
+  settings,
   defaultServer: DEFAULT_SERVER,
   onJoin: joinRoom,
   onReady: ready => socket?.emit("setReady", ready),
-  onRestart: () => socket?.emit("restart")
+  onRestart: () => socket?.emit("restart"),
+  onSettings: next => {
+    settings.update(next);
+    if (session.joined) socket?.emit("setSettings", { difficulty: settings.values.difficulty });
+  }
 });
 
 setInterval(() => {
@@ -27,7 +34,7 @@ setInterval(() => {
 function joinRoom(options) {
   session.color = options.color;
   connect(options.serverUrl);
-  socket.emit("joinRoom", options);
+  socket.emit("joinRoom", { ...options, settings: { difficulty: settings.values.difficulty } });
 }
 
 function connect(serverUrl) {
@@ -48,7 +55,7 @@ function connect(serverUrl) {
 }
 
 function frame() {
-  drawGame(canvas, buffer.current() || session.state, session.playerId);
+  drawGame(canvas, buffer.current() || session.state, session.playerId, settings.values);
   requestAnimationFrame(frame);
 }
 

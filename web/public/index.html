@@ -18,6 +18,7 @@
         <div class="timer">
           <span id="timerText">0s</span>
           <span id="challengeText"></span>
+          <button id="settingsButton" class="icon-button" aria-label="设置">⚙</button>
         </div>
       </section>
 
@@ -44,6 +45,40 @@
         <button id="restartButton" disabled>重开</button>
         <span id="playerText">未加入</span>
       </section>
+
+      <aside id="settingsPanel" class="settings-panel" aria-label="游戏设置">
+        <div class="settings-head">
+          <strong>设置</strong>
+          <button id="closeSettingsButton" class="icon-button" aria-label="关闭设置">×</button>
+        </div>
+        <label>
+          难度
+          <select id="difficultySelect">
+            <option value="easy">轻松</option>
+            <option value="normal">标准</option>
+            <option value="hard">高压</option>
+          </select>
+        </label>
+        <label>
+          画质
+          <select id="qualitySelect">
+            <option value="high">高</option>
+            <option value="low">低</option>
+          </select>
+        </label>
+        <label class="toggle-row">
+          <input id="backgroundToggle" type="checkbox" />
+          显示场景背景
+        </label>
+        <label class="toggle-row">
+          <input id="shakeToggle" type="checkbox" />
+          屏幕震动
+        </label>
+        <label class="toggle-row">
+          <input id="joystickToggle" type="checkbox" />
+          显示触控摇杆
+        </label>
+      </aside>
 
       <div id="joystick" class="joystick">
         <div id="stick" class="stick"></div>

@@ -46,7 +46,8 @@ body::before {
 }
 
 button,
-input {
+input,
+select {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--text);
@@ -72,7 +73,8 @@ button:active:not(:disabled) {
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 3px;
 }
@@ -82,13 +84,18 @@ button:disabled {
   opacity: 0.45;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 42px;
   margin-top: 6px;
   padding: 0 11px;
   background: rgba(8, 10, 14, 0.82);
   box-shadow: inset 0 1px 10px rgba(0,0,0,0.28);
+}
+
+select {
+  cursor: pointer;
 }
 
 .shell {
@@ -98,6 +105,22 @@ input {
   height: 100dvh;
   display: grid;
   place-items: center;
+}
+
+.shell::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  background:
+    linear-gradient(90deg, rgba(4,8,18,0.42), transparent 24%, transparent 72%, rgba(4,8,18,0.46)),
+    linear-gradient(180deg, rgba(4,8,18,0.58), transparent 30%, transparent 62%, rgba(4,8,18,0.68)),
+    url("./assets/background.png") center / cover no-repeat;
+  transition: opacity 220ms ease;
+}
+
+.no-scene-bg .shell::before {
+  opacity: 0;
 }
 
 canvas {
@@ -147,8 +170,21 @@ canvas {
 }
 
 .timer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: var(--gold);
   font-variant-numeric: tabular-nums;
+}
+
+.icon-button {
+  width: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  font-size: 1.05rem;
 }
 
 .panel {
@@ -194,6 +230,52 @@ canvas {
   padding: 7px 9px;
 }
 
+.settings-panel {
+  position: fixed;
+  top: max(76px, calc(env(safe-area-inset-top) + 76px));
+  right: 14px;
+  z-index: 7;
+  width: min(320px, calc(100vw - 28px));
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  background: rgba(18, 21, 27, 0.9);
+  border: 1px solid rgba(244, 239, 229, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgba(2, 5, 12, 0.52), inset 0 1px rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px) saturate(1.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(18px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.settings-panel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.settings-head,
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggle-row {
+  justify-content: flex-start;
+  color: var(--muted);
+}
+
+.toggle-row input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: var(--gold);
+}
+
 .joystick {
   position: fixed;
   right: 22px;
@@ -206,6 +288,11 @@ canvas {
   background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
   box-shadow: 0 18px 46px var(--shadow), inset 0 1px rgba(255,255,255,0.1);
   touch-action: none;
+}
+
+.hide-joystick .joystick {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .stick {

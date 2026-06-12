@@ -1,0 +1,44 @@
+const DEFAULTS = {
+  difficulty: "normal",
+  quality: "high",
+  screenShake: true,
+  showBackground: true,
+  showJoystick: true
+};
+
+export function createSettings() {
+  const values = { ...DEFAULTS, ...readStored() };
+  applyDom(values);
+
+  return {
+    values,
+    update(next) {
+      Object.assign(values, sanitize(next));
+      localStorage.setItem("elastic-duo-settings", JSON.stringify(values));
+      applyDom(values);
+    }
+  };
+}
+
+function readStored() {
+  try {
+    return sanitize(JSON.parse(localStorage.getItem("elastic-duo-settings") || "{}"));
+  } catch {
+    return {};
+  }
+}
+
+function sanitize(value = {}) {
+  return {
+    difficulty: ["easy", "normal", "hard"].includes(value.difficulty) ? value.difficulty : DEFAULTS.difficulty,
+    quality: value.quality === "low" ? "low" : DEFAULTS.quality,
+    screenShake: value.screenShake !== false,
+    showBackground: value.showBackground !== false,
+    showJoystick: value.showJoystick !== false
+  };
+}
+
+function applyDom(values) {
+  document.body.classList.toggle("hide-joystick", !values.showJoystick);
+  document.body.classList.toggle("no-scene-bg", !values.showBackground);
+}
