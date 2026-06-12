@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Elastic Duo 是一个双人联机躲避游戏，玩家由弹力带连接并在颜色区域倒计时中配合移动。" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>Elastic Duo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hud">
+        <div>
+          <strong>Elastic Duo</strong>
+          <span id="statusText">未连接</span>
+        </div>
+        <div class="timer">
+          <span id="timerText">0s</span>
+          <span id="challengeText"></span>
+        </div>
+      </section>
+
+      <section id="joinPanel" class="panel">
+        <label>
+          昵称
+          <input id="nameInput" maxlength="16" value="Player" />
+        </label>
+        <label>
+          房间
+          <input id="roomInput" maxlength="24" value="room1" />
+        </label>
+        <div class="segmented">
+          <button id="redButton" class="active" data-color="red">红色</button>
+          <button id="blueButton" data-color="blue">蓝色</button>
+        </div>
+        <button id="joinButton" class="primary">进入房间</button>
+      </section>
+
+      <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+      <section class="controls">
+        <button id="readyButton" class="primary" disabled>准备</button>
+        <button id="restartButton" disabled>重开</button>
+        <span id="playerText">未加入</span>
+      </section>
+
+      <div id="joystick" class="joystick">
+        <div id="stick" class="stick"></div>
+      </div>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./config.js"></script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

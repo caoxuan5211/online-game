@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Elastic Duo App 客户端，用于连接 Elastic Duo 联机服务器。" />
+    <link rel="icon" href="./src/favicon.svg" type="image/svg+xml" />
+    <title>Elastic Duo App</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hud">
+        <div>
+          <strong>Elastic Duo</strong>
+          <span id="statusText">未连接</span>
+        </div>
+        <div class="timer">
+          <span id="timerText">0s</span>
+          <span id="challengeText"></span>
+        </div>
+      </section>
+
+      <section id="joinPanel" class="panel">
+        <label>
+          昵称
+          <input id="nameInput" maxlength="16" value="Player" />
+        </label>
+        <label>
+          房间
+          <input id="roomInput" maxlength="24" value="room1" />
+        </label>
+        <label>
+          服务器
+          <input id="serverInput" value="http://160.25.134.111:3000" />
+        </label>
+        <div class="segmented">
+          <button id="redButton" class="active" data-color="red">红色</button>
+          <button id="blueButton" data-color="blue">蓝色</button>
+        </div>
+        <button id="joinButton" class="primary">进入房间</button>
+      </section>
+
+      <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+      <section class="controls">
+        <button id="readyButton" class="primary" disabled>准备</button>
+        <button id="restartButton" disabled>重开</button>
+        <span id="playerText">未加入</span>
+      </section>
+
+      <div id="joystick" class="joystick">
+        <div id="stick" class="stick"></div>
+      </div>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

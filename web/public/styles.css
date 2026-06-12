@@ -1,0 +1,247 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0d11;
+  --panel: rgba(18, 21, 27, 0.78);
+  --panel-strong: rgba(24, 28, 36, 0.9);
+  --line: rgba(244, 239, 229, 0.14);
+  --text: #f4efe5;
+  --muted: #a9a294;
+  --red: #f05a52;
+  --blue: #4aa8e8;
+  --gold: #f0c766;
+  --shadow: rgba(2, 5, 12, 0.46);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(240, 90, 82, 0.12), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(74, 168, 232, 0.14), transparent 30%),
+    var(--bg);
+  color: var(--text);
+  font-family: Bahnschrift, Aptos, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  content: "";
+  opacity: 0.18;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+}
+
+button,
+input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+}
+
+button {
+  min-height: 42px;
+  padding: 0 15px;
+  background: rgba(39, 43, 52, 0.88);
+  box-shadow: 0 12px 28px var(--shadow), inset 0 1px rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: transform 160ms ease, background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: rgba(51, 56, 67, 0.95);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+input {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 6px;
+  padding: 0 11px;
+  background: rgba(8, 10, 14, 0.82);
+  box-shadow: inset 0 1px 10px rgba(0,0,0,0.28);
+}
+
+.shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+}
+
+canvas {
+  position: relative;
+  z-index: 2;
+  width: min(100vw, calc(100vh * 16 / 9));
+  width: min(100vw, calc(100dvh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  height: min(100dvh, calc(100vw * 9 / 16));
+  background: #14171d;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+  touch-action: none;
+}
+
+.hud,
+.controls,
+.panel {
+  position: fixed;
+  z-index: 5;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 60px var(--shadow), inset 0 1px rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.hud {
+  top: max(12px, env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 16px;
+}
+
+.hud strong {
+  margin-right: 10px;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+#statusText,
+#playerText {
+  color: var(--muted);
+}
+
+.timer {
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  left: 50%;
+  top: 50%;
+  width: min(380px, calc(100vw - 28px));
+  padding: 20px;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--panel-strong);
+}
+
+.panel.hidden {
+  display: none;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.segmented .active[data-color="red"] {
+  border-color: rgba(240, 90, 82, 0.72);
+  background: rgba(240, 90, 82, 0.22);
+}
+
+.segmented .active[data-color="blue"] {
+  border-color: rgba(74, 168, 232, 0.76);
+  background: rgba(74, 168, 232, 0.22);
+}
+
+.primary {
+  border-color: rgba(240, 199, 102, 0.76);
+  background: linear-gradient(180deg, rgba(100, 74, 28, 0.92), rgba(64, 45, 17, 0.94));
+}
+
+.controls {
+  left: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  min-height: 56px;
+  padding: 7px 9px;
+}
+
+.joystick {
+  position: fixed;
+  right: 22px;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 6;
+  width: 132px;
+  height: 132px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
+  box-shadow: 0 18px 46px var(--shadow), inset 0 1px rgba(255,255,255,0.1);
+  touch-action: none;
+}
+
+.stick {
+  position: absolute;
+  left: 44px;
+  top: 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe29a, var(--gold));
+  box-shadow: 0 8px 20px rgba(240, 199, 102, 0.26);
+  transition: transform 80ms linear;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .joystick {
+    opacity: 0.38;
+  }
+}
+
+@media (max-width: 700px) {
+  .hud {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 12px;
+  }
+
+  .controls {
+    right: 12px;
+  }
+
+  #playerText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

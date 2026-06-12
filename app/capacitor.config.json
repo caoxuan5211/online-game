@@ -1,0 +1,8 @@
+{
+  "appId": "com.elasticduo.game",
+  "appName": "Elastic Duo",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
+}
