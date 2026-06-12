@@ -9,20 +9,59 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="hud">
+    <main id="appRoot" class="app-root menu-mode">
+      <div class="scene-bg" aria-hidden="true"></div>
+      <div class="left-overlay" aria-hidden="true"></div>
+
+      <section class="player-card" aria-label="玩家信息">
+        <div class="avatar">P</div>
         <div>
-          <strong>Elastic Duo</strong>
-          <span id="statusText">未连接</span>
-        </div>
-        <div class="timer">
-          <span id="timerText">0s</span>
-          <span id="challengeText"></span>
-          <button id="settingsButton" class="icon-button" aria-label="设置">⚙</button>
+          <strong id="profileName">Player</strong>
+          <span id="profileRoom">ROOM1</span>
         </div>
       </section>
 
-      <section id="joinPanel" class="panel">
+      <button id="settingsButton" class="top-settings" aria-label="设置">
+        <span aria-hidden="true">⚙</span>
+      </button>
+
+      <section id="heroPanel" class="hero-panel" aria-label="主菜单">
+        <h1>ELASTIC<br />DUO</h1>
+        <p>弹性之间，连接彼此</p>
+
+        <nav class="main-menu" aria-label="游戏菜单">
+          <button id="startButton" class="start-button">
+            <span class="start-orb" aria-hidden="true"></span>
+            <span class="button-copy">
+              <strong>开始游戏</strong>
+              <small>START</small>
+            </span>
+            <span class="arrow-circle" aria-hidden="true">→</span>
+          </button>
+
+          <button id="menuSettingsButton" class="menu-link">
+            <span class="line-icon" aria-hidden="true">◎</span>
+            <span>
+              <strong>设置</strong>
+              <small>SETTINGS</small>
+            </span>
+          </button>
+
+          <button id="helpButton" class="menu-link">
+            <span class="line-icon" aria-hidden="true">?</span>
+            <span>
+              <strong>帮助</strong>
+              <small>HELP</small>
+            </span>
+          </button>
+        </nav>
+      </section>
+
+      <section id="joinPanel" class="room-panel hidden" aria-label="房间设置">
+        <div class="panel-head">
+          <strong>进入房间</strong>
+          <button id="closeJoinButton" class="circle-button" aria-label="关闭房间面板">×</button>
+        </div>
         <label>
           昵称
           <input id="nameInput" maxlength="16" value="Player" />
@@ -32,24 +71,37 @@
           <input id="roomInput" maxlength="24" value="room1" />
         </label>
         <div class="segmented">
-          <button id="redButton" class="active" data-color="red">红色</button>
-          <button id="blueButton" data-color="blue">蓝色</button>
+          <button id="redButton" class="active" data-color="red">红队</button>
+          <button id="blueButton" data-color="blue">蓝队</button>
         </div>
-        <button id="joinButton" class="primary">进入房间</button>
+        <button id="joinButton" class="join-button">进入房间</button>
       </section>
 
       <canvas id="gameCanvas" width="1280" height="720"></canvas>
 
-      <section class="controls">
-        <button id="readyButton" class="primary" disabled>准备</button>
+      <section class="game-hud">
+        <span id="timerText">0s</span>
+        <span id="challengeText"></span>
+      </section>
+
+      <section class="game-controls">
+        <button id="readyButton" class="ready-button" disabled>准备</button>
         <button id="restartButton" disabled>重开</button>
         <span id="playerText">未加入</span>
+      </section>
+
+      <section class="connection-status" aria-label="连接状态">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>
+          <strong id="statusText">连接中...</strong>
+          <small>CONNECTING...</small>
+        </span>
       </section>
 
       <aside id="settingsPanel" class="settings-panel" aria-label="游戏设置">
         <div class="settings-head">
           <strong>设置</strong>
-          <button id="closeSettingsButton" class="icon-button" aria-label="关闭设置">×</button>
+          <button id="closeSettingsButton" class="circle-button" aria-label="关闭设置">×</button>
         </div>
         <label>
           难度
@@ -74,15 +126,15 @@
           <input id="shakeToggle" type="checkbox" />
           屏幕震动
         </label>
-        <label class="toggle-row">
-          <input id="joystickToggle" type="checkbox" />
-          显示触控摇杆
-        </label>
       </aside>
 
-      <div id="joystick" class="joystick">
-        <div id="stick" class="stick"></div>
-      </div>
+      <aside id="helpPanel" class="help-panel" aria-label="帮助">
+        <div class="settings-head">
+          <strong>帮助</strong>
+          <button id="closeHelpButton" class="circle-button" aria-label="关闭帮助">×</button>
+        </div>
+        <p>两名玩家进入同一房间后准备开始。使用 WASD 或方向键移动，避开障碍，并在颜色区域闪烁时回到对应区域。</p>
+      </aside>
     </main>
 
     <script src="/socket.io/socket.io.js"></script>

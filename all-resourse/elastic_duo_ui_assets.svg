@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">
+<defs>
+<linearGradient id="btn" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#f7f9ff"/>
+<stop offset="100%" stop-color="#e8eeff"/>
+</linearGradient>
+<radialGradient id="ball" cx="35%" cy="30%">
+<stop offset="0%" stop-color="#8db4ff"/>
+<stop offset="100%" stop-color="#4d63ff"/>
+</radialGradient>
+</defs>
+
+<text x="20" y="40" font-size="28">Elastic Duo - Extracted UI Asset Library</text>
+
+<g transform="translate(20,80)">
+<rect x="0" y="0" rx="24" ry="24" width="340" height="90" fill="url(#btn)" stroke="#d7def5"/>
+<circle cx="45" cy="45" r="32" fill="url(#ball)"/>
+<text x="95" y="42" font-size="24">开始游戏</text>
+<text x="95" y="68" font-size="14">START</text>
+<circle cx="300" cy="45" r="14" fill="none" stroke="#5566cc" stroke-width="2"/>
+<path d="M295 45 L305 45 M301 40 L306 45 L301 50" stroke="#5566cc" fill="none"/>
+</g>
+
+<g transform="translate(20,220)">
+<circle cx="24" cy="24" r="18" fill="none" stroke="#6070c9" stroke-width="2"/>
+<circle cx="24" cy="24" r="6" fill="none" stroke="#6070c9"/>
+<text x="60" y="30" font-size="20">Settings Icon</text>
+</g>
+
+<g transform="translate(20,300)">
+<circle cx="24" cy="24" r="18" fill="none" stroke="#6070c9" stroke-width="2"/>
+<text x="20" y="31" font-size="22" text-anchor="middle">?</text>
+<text x="60" y="30" font-size="20">Help Icon</text>
+</g>
+
+<g transform="translate(600,180)">
+<circle cx="0" cy="0" r="70" fill="url(#ball)"/>
+<circle cx="160" cy="20" r="45" fill="#dfe7ff"/>
+<text x="-40" y="120" font-size="20">Decorative spheres</text>
+</g>
+</svg>

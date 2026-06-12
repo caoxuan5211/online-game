@@ -6,10 +6,12 @@ export function createInput() {
 
   window.addEventListener("keydown", event => keys.add(event.key.toLowerCase()));
   window.addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
-  joystick.addEventListener("pointerdown", event => startTouch(event, joystick, touch));
-  joystick.addEventListener("pointermove", event => moveTouch(event, joystick, stick, touch));
-  joystick.addEventListener("pointerup", () => endTouch(stick, touch));
-  joystick.addEventListener("pointercancel", () => endTouch(stick, touch));
+  if (joystick && stick) {
+    joystick.addEventListener("pointerdown", event => startTouch(event, joystick, touch));
+    joystick.addEventListener("pointermove", event => moveTouch(event, joystick, stick, touch));
+    joystick.addEventListener("pointerup", () => endTouch(stick, touch));
+    joystick.addEventListener("pointercancel", () => endTouch(stick, touch));
+  }
 
   return {
     vector() {

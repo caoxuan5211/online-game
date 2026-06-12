@@ -3,6 +3,7 @@ export function setupUi({ session, settings, onJoin, onReady, onRestart, onSetti
   let selectedColor = "red";
   let ready = false;
   bindSettings(nodes, settings.values, onSettings);
+  bindShell(nodes);
 
   nodes.colorButtons.forEach(button => {
     button.addEventListener("click", () => {
@@ -36,7 +37,11 @@ export function setupUi({ session, settings, onJoin, onReady, onRestart, onSetti
     },
     afterJoin(roomId) {
       nodes.joinPanel.classList.add("hidden");
+      nodes.heroPanel.classList.add("hidden");
+      nodes.appRoot.classList.remove("menu-mode");
+      nodes.appRoot.classList.add("game-mode");
       nodes.readyButton.disabled = false;
+      nodes.profileRoom.textContent = roomId.toUpperCase();
       nodes.playerText.textContent = `房间 ${roomId} / ${session.color}`;
     },
     update(state) {
@@ -48,11 +53,21 @@ export function setupUi({ session, settings, onJoin, onReady, onRestart, onSetti
 
 function getNodes() {
   return {
+    appRoot: document.querySelector("#appRoot"),
+    heroPanel: document.querySelector("#heroPanel"),
     joinPanel: document.querySelector("#joinPanel"),
+    startButton: document.querySelector("#startButton"),
+    closeJoinButton: document.querySelector("#closeJoinButton"),
+    menuSettingsButton: document.querySelector("#menuSettingsButton"),
+    helpButton: document.querySelector("#helpButton"),
+    helpPanel: document.querySelector("#helpPanel"),
+    closeHelpButton: document.querySelector("#closeHelpButton"),
     statusText: document.querySelector("#statusText"),
     timerText: document.querySelector("#timerText"),
     challengeText: document.querySelector("#challengeText"),
     playerText: document.querySelector("#playerText"),
+    profileName: document.querySelector("#profileName"),
+    profileRoom: document.querySelector("#profileRoom"),
     settingsButton: document.querySelector("#settingsButton"),
     settingsPanel: document.querySelector("#settingsPanel"),
     closeSettingsButton: document.querySelector("#closeSettingsButton"),
@@ -60,7 +75,6 @@ function getNodes() {
     qualitySelect: document.querySelector("#qualitySelect"),
     backgroundToggle: document.querySelector("#backgroundToggle"),
     shakeToggle: document.querySelector("#shakeToggle"),
-    joystickToggle: document.querySelector("#joystickToggle"),
     nameInput: document.querySelector("#nameInput"),
     roomInput: document.querySelector("#roomInput"),
     joinButton: document.querySelector("#joinButton"),
@@ -80,7 +94,10 @@ function updateStateText(nodes, state, playerId) {
   nodes.restartButton.disabled = state.status !== "gameover";
   nodes.difficultySelect.disabled = state.status === "running";
   const me = state.players.find(player => player.id === playerId);
-  if (me) nodes.playerText.textContent = `${me.name} / ${colorName(me.color)} / ${state.settings.difficultyLabel}`;
+  if (me) {
+    nodes.profileName.textContent = me.name;
+    nodes.playerText.textContent = `${me.name} / ${colorName(me.color)} / ${state.settings.difficultyLabel}`;
+  }
   nodes.challengeText.textContent = challengeLabel(state);
 }
 
@@ -107,11 +124,12 @@ function colorName(color) {
 function bindSettings(nodes, values, onSettings) {
   syncSettingsControls(nodes, values);
   nodes.settingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
+  nodes.menuSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
   nodes.closeSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.remove("open"));
   [nodes.difficultySelect, nodes.qualitySelect].forEach(node => {
     node.addEventListener("change", () => onSettings(readSettings(nodes)));
   });
-  [nodes.backgroundToggle, nodes.shakeToggle, nodes.joystickToggle].forEach(node => {
+  [nodes.backgroundToggle, nodes.shakeToggle].forEach(node => {
     node.addEventListener("change", () => onSettings(readSettings(nodes)));
   });
 }
@@ -121,7 +139,6 @@ function syncSettingsControls(nodes, values) {
   nodes.qualitySelect.value = values.quality;
   nodes.backgroundToggle.checked = values.showBackground;
   nodes.shakeToggle.checked = values.screenShake;
-  nodes.joystickToggle.checked = values.showJoystick;
 }
 
 function readSettings(nodes) {
@@ -129,7 +146,13 @@ function readSettings(nodes) {
     difficulty: nodes.difficultySelect.value,
     quality: nodes.qualitySelect.value,
     showBackground: nodes.backgroundToggle.checked,
-    screenShake: nodes.shakeToggle.checked,
-    showJoystick: nodes.joystickToggle.checked
+    screenShake: nodes.shakeToggle.checked
   };
+}
+
+function bindShell(nodes) {
+  nodes.startButton.addEventListener("click", () => nodes.joinPanel.classList.remove("hidden"));
+  nodes.closeJoinButton.addEventListener("click", () => nodes.joinPanel.classList.add("hidden"));
+  nodes.helpButton.addEventListener("click", () => nodes.helpPanel.classList.toggle("open"));
+  nodes.closeHelpButton.addEventListener("click", () => nodes.helpPanel.classList.remove("open"));
 }
