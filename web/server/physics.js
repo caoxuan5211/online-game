@@ -2,7 +2,7 @@ export const WORLD = { width: 1280, height: 720 };
 export const PLAYER_RADIUS = 18;
 export const REST_LENGTH = 190;
 export const FAIL_DISTANCE = 390;
-export const MAX_OBSTACLES = 42;
+export const MAX_OBSTACLES = 34;
 export const DIFFICULTIES = {
   easy: { label: "轻松", speed: 0.82, spawnMin: 0.78, spawnMax: 1.22, warmup: 2.8 },
   normal: { label: "标准", speed: 1, spawnMin: 0.52, spawnMax: 0.94, warmup: 2.1 },

@@ -5,10 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <meta name="description" content="Elastic Duo 是一个双人联机躲避游戏，玩家由弹力带连接并在颜色区域倒计时中配合移动。" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="./assets/background.png" as="image" />
+    <link rel="modulepreload" href="./src/main.js" />
     <title>Elastic Duo</title>
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./loader.css" />
   </head>
   <body>
+    <section id="loaderPanel" class="loader-panel" aria-live="polite">
+      <div class="loader-box">
+        <strong>加载游戏资源</strong>
+        <div class="loader-track"><span id="loaderBar"></span></div>
+        <small id="loaderText">0% · 准备资源</small>
+      </div>
+    </section>
+
     <main id="appRoot" class="app-root menu-mode">
       <div class="scene-bg" aria-hidden="true"></div>
       <div class="left-overlay" aria-hidden="true"></div>

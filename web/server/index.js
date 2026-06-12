@@ -7,21 +7,18 @@ import { createGameRoom, updateRoom } from "./room.js";
 
 const PORT = Number(process.env.PORT || 3000);
 const TICK_RATE = 60;
+const STATE_RATE = 30;
 const rooms = new Map();
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const publicDir = join(__dirname, "../public");
 let lastTick = Date.now();
+let broadcastStep = 0;
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-app.use((req, res, next) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  next();
-});
-app.use(express.static(join(__dirname, "../public")));
+app.use(express.static(publicDir, { setHeaders: setStaticCache }));
 
 io.on("connection", socket => {
   socket.emit("roomList", publicRooms());
@@ -39,9 +36,11 @@ setInterval(() => {
   const now = Date.now();
   const dt = clamp((now - lastTick) / 1000, 1 / 120, 1 / 30);
   lastTick = now;
+  broadcastStep = (broadcastStep + 1) % (TICK_RATE / STATE_RATE);
+  const shouldBroadcast = broadcastStep === 0;
   for (const [roomId, room] of rooms) {
     updateRoom(room, dt);
-    io.to(roomId).emit("state", room.publicState());
+    if (shouldBroadcast) io.to(roomId).emit("state", room.publicState());
     if (room.players.size === 0) {
       rooms.delete(roomId);
       emitRooms();
@@ -164,4 +163,16 @@ function emitRooms() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function setStaticCache(res, filePath) {
+  if (/[\\/]index\.html$|[\\/]config\.js$|[\\/]sw\.js$/i.test(filePath)) {
+    res.setHeader("Cache-Control", "no-cache, must-revalidate");
+    return;
+  }
+  if (/\.(png|svg|jpg|jpeg|webp|ico)$/i.test(filePath)) {
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    return;
+  }
+  res.setHeader("Cache-Control", "no-cache, must-revalidate");
 }

@@ -228,7 +228,8 @@ canvas {
 }
 .game-mode canvas { opacity: 1; pointer-events: auto; }
 .lobby-mode .hero-panel, .lobby-mode .connection-status,
-.game-mode .hero-panel, .game-mode .connection-status { display: none; }
+.game-mode .hero-panel, .game-mode .connection-status, .game-mode .player-card, .game-mode .top-settings { display: none; }
+.game-mode .scene-bg, .game-mode .left-overlay { display: none; }
 .game-hud, .game-controls { display: none; }
 .game-mode .game-hud {
   top: max(24px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);

@@ -1,0 +1,25 @@
+.loader-panel {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+  padding: 24px; color: #fff; background: #0d1830 url("./assets/background.png") center / cover no-repeat;
+  transition: opacity 260ms ease, visibility 260ms ease;
+}
+.loader-panel::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(9,18,43,0.9), rgba(16,52,116,0.68));
+}
+.loader-box {
+  position: relative; width: min(390px, calc(100vw - 40px)); display: grid; gap: 14px;
+  text-shadow: 0 12px 34px rgba(0,0,0,0.32);
+}
+.loader-box strong { font-size: 1.28rem; }
+.loader-track {
+  height: 12px; overflow: hidden; border-radius: 999px;
+  background: rgba(255,255,255,0.22); box-shadow: inset 0 1px 8px rgba(0,0,0,0.24);
+}
+.loader-track span {
+  display: block; width: 0; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, #79b8ff, #36c6a7, #f0c766);
+  transition: width 180ms ease;
+}
+.loader-box small { color: rgba(255,255,255,0.8); letter-spacing: 0.08em; }
+.is-loaded .loader-panel { opacity: 0; pointer-events: none; visibility: hidden; }

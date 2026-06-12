@@ -1,4 +1,6 @@
 import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js";
+import { drawStaticScene } from "./render-cache.js";
+import { prepareCanvas, resolveRenderProfile } from "./render-quality.js";
 
 const COLORS = {
   band: "#f0c766",
@@ -6,97 +8,29 @@ const COLORS = {
   text: "#f4efe5"
 };
 const WORLD = { width: 1280, height: 720 };
-const sceneBackground = new Image();
-sceneBackground.src = new URL("./assets/background.png", import.meta.url).href;
 
 export function drawGame(canvas, state, playerId, prefs = {}) {
-  const ctx = prepareCanvas(canvas, state?.world || WORLD);
   const world = state?.world || WORLD;
-  const quality = prefs.quality !== "low";
-  clear(ctx, world, prefs.showBackground !== false);
-  drawArena(ctx, world, quality);
+  const profile = resolveRenderProfile(prefs);
+  const ctx = prepareCanvas(canvas, world, profile);
+  drawStaticScene(ctx, world, profile, prefs.showBackground !== false);
   if (!state) return drawCenter(ctx, canvas, "连接中");
   ctx.save();
   if (prefs.screenShake !== false) applyScreenShake(ctx, state);
-  drawChallenge(ctx, state);
-  drawDangerHints(ctx, state.obstacles, state.world);
-  drawObstacles(ctx, state.obstacles, quality);
-  drawBand(ctx, state.players);
-  drawPlayers(ctx, state.players, playerId, quality);
+  drawChallenge(ctx, state, profile);
+  if (profile.hints) drawDangerHints(ctx, state.obstacles, state.world);
+  drawObstacles(ctx, state.obstacles, profile);
+  drawBand(ctx, state.players, profile);
+  drawPlayers(ctx, state.players, playerId, profile);
   drawTension(ctx, state);
   ctx.restore();
   drawOverlay(ctx, canvas, state);
 }
 
-function prepareCanvas(canvas, world) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const width = Math.max(1, Math.round(canvas.clientWidth * dpr));
-  const height = Math.max(1, Math.round(canvas.clientHeight * dpr));
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
-  const ctx = canvas.getContext("2d");
-  ctx.setTransform(width / world.width, 0, 0, height / world.height, 0, 0);
-  return ctx;
-}
-
-function clear(ctx, world, showBackground) {
-  if (showBackground && sceneBackground.complete) {
-    drawCoverImage(ctx, sceneBackground, world);
-    ctx.fillStyle = "rgba(9,14,27,0.48)";
-    ctx.fillRect(0, 0, world.width, world.height);
-  } else {
-    const gradient = ctx.createRadialGradient(world.width * 0.5, world.height * 0.44, 40, world.width * 0.5, world.height * 0.5, world.width * 0.76);
-    gradient.addColorStop(0, "#202026");
-    gradient.addColorStop(0.58, "#14171d");
-    gradient.addColorStop(1, "#0b0d11");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, world.width, world.height);
-  }
-  drawReadabilityMasks(ctx, world);
-}
-
-function drawArena(ctx, world, quality) {
-  if (!quality) return;
-  ctx.strokeStyle = "rgba(190,220,255,0.035)";
-  ctx.lineWidth = 1;
-  for (let x = 0; x < world.width; x += 96) line(ctx, x, 0, x, world.height);
-  for (let y = 0; y < world.height; y += 96) line(ctx, 0, y, world.width, y);
-  ctx.strokeStyle = "rgba(210,235,255,0.18)";
-  ctx.lineWidth = 4;
-  ctx.strokeRect(16, 16, world.width - 32, world.height - 32);
-}
-
-function drawCoverImage(ctx, image, world) {
-  const scale = Math.max(world.width / image.naturalWidth, world.height / image.naturalHeight);
-  const width = image.naturalWidth * scale;
-  const height = image.naturalHeight * scale;
-  ctx.drawImage(image, (world.width - width) / 2, (world.height - height) / 2, width, height);
-}
-
-function drawReadabilityMasks(ctx, world) {
-  const top = ctx.createLinearGradient(0, 0, 0, world.height * 0.34);
-  top.addColorStop(0, "rgba(4,8,18,0.72)");
-  top.addColorStop(1, "rgba(4,8,18,0)");
-  ctx.fillStyle = top;
-  ctx.fillRect(0, 0, world.width, world.height * 0.34);
-  const bottom = ctx.createLinearGradient(0, world.height, 0, world.height * 0.54);
-  bottom.addColorStop(0, "rgba(4,8,18,0.76)");
-  bottom.addColorStop(1, "rgba(4,8,18,0)");
-  ctx.fillStyle = bottom;
-  ctx.fillRect(0, world.height * 0.54, world.width, world.height * 0.46);
-  const side = ctx.createRadialGradient(world.width * 0.5, world.height * 0.5, 120, world.width * 0.5, world.height * 0.5, 760);
-  side.addColorStop(0, "rgba(255,255,255,0)");
-  side.addColorStop(1, "rgba(4,8,18,0.44)");
-  ctx.fillStyle = side;
-  ctx.fillRect(0, 0, world.width, world.height);
-}
-
-function drawChallenge(ctx, state) {
+function drawChallenge(ctx, state, profile) {
   if (!state.challenge) return;
   const urgency = 1 - state.challenge.remaining / state.challenge.duration;
-  const pulse = 0.3 + Math.sin(performance.now() / 26) * 0.16 + urgency * 0.28;
+  const pulse = 0.28 + Math.sin(performance.now() / (profile.full ? 32 : 58)) * 0.12 + urgency * 0.26;
   state.challenge.assignments.forEach(item => drawZone(ctx, item.zone, state.world, item.color, pulse));
   ctx.strokeStyle = urgency > 0.55 ? "rgba(255,116,95,0.86)" : "rgba(244,239,229,0.62)";
   ctx.lineWidth = urgency > 0.55 ? 10 : 7;
@@ -115,13 +49,13 @@ function drawZone(ctx, zone, world, color, alpha) {
   ctx.fill();
 }
 
-function drawObstacles(ctx, obstacles, quality) {
+function drawObstacles(ctx, obstacles, profile) {
   obstacles.forEach(obstacle => {
     ctx.save();
     ctx.translate(obstacle.x, obstacle.y);
     ctx.rotate(obstacle.spin);
     ctx.shadowColor = "rgba(230,223,209,0.55)";
-    ctx.shadowBlur = quality ? 18 : 0;
+    ctx.shadowBlur = profile.shadows ? 16 : 0;
     drawObstacleCross(ctx, obstacle.r);
     ctx.shadowBlur = 0;
     ctx.strokeStyle = "rgba(240,90,82,0.72)";
@@ -146,7 +80,7 @@ function drawObstacleCross(ctx, radius) {
   });
 }
 
-function drawBand(ctx, players) {
+function drawBand(ctx, players, profile) {
   if (players.length < 2) return;
   const [a, b] = players;
   const strain = clamp((Math.hypot(a.x - b.x, a.y - b.y) - 190) / 200, 0, 1);
@@ -155,22 +89,22 @@ function drawBand(ctx, players) {
   gradient.addColorStop(0.5, strain > 0.72 ? "#ff7a57" : COLORS.band);
   gradient.addColorStop(1, b.color || COLORS.band);
   ctx.shadowColor = strain > 0.72 ? "rgba(255,100,80,0.62)" : "rgba(240,199,102,0.38)";
-  ctx.shadowBlur = 18;
   ctx.strokeStyle = gradient;
   ctx.lineWidth = 12;
   ctx.lineCap = "round";
+  ctx.shadowBlur = profile.bandGlow ? 18 : 0;
   ctx.setLineDash(strain > 0.72 ? [14, 10] : []);
   drawElasticCurve(ctx, a, b, strain);
   ctx.setLineDash([]);
   ctx.shadowBlur = 0;
 }
 
-function drawPlayers(ctx, players, playerId, quality) {
+function drawPlayers(ctx, players, playerId, profile) {
   players.forEach(player => {
     const speed = Math.hypot(player.vx || 0, player.vy || 0);
-    if (quality) drawTrail(ctx, player, speed);
+    if (profile.trails) drawTrail(ctx, player, speed);
     ctx.shadowColor = hexToRgba(player.color, 0.42);
-    ctx.shadowBlur = quality ? 26 : 0;
+    ctx.shadowBlur = profile.shadows ? 22 : 0;
     ctx.fillStyle = player.color || "#888";
     ctx.strokeStyle = player.id === playerId ? "#fff" : "rgba(255,255,255,0.35)";
     ctx.lineWidth = player.id === playerId ? 6 : 3;
@@ -180,7 +114,7 @@ function drawPlayers(ctx, players, playerId, quality) {
     ctx.stroke();
     ctx.shadowBlur = 0;
     drawFacingDot(ctx, player);
-    drawName(ctx, player);
+    if (profile.names) drawName(ctx, player);
   });
 }
 
@@ -192,12 +126,15 @@ function drawName(ctx, player) {
 }
 
 function drawCenter(ctx, canvas, text) {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = "rgba(0,0,0,0.42)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = COLORS.text;
   ctx.font = "700 34px Bahnschrift, Segoe UI, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  ctx.restore();
 }
 
 function drawDangerHints(ctx, obstacles, world) {

@@ -189,16 +189,16 @@ function renderRooms(nodes, rooms, join) {
 }
 
 function updateStateText(nodes, state, playerId) {
-  nodes.statusText.textContent = state.message;
-  nodes.timerText.textContent = `${state.elapsed}s`;
+  setText(nodes.statusText, state.message);
+  setText(nodes.timerText, `${state.elapsed}s`);
   nodes.restartButton.disabled = state.status !== "gameover";
   nodes.difficultySelect.disabled = state.status === "running" || state.status === "countdown";
   const me = state.players.find(player => player.id === playerId);
   if (me) {
-    nodes.profileName.textContent = me.name;
-    nodes.playerText.textContent = `${me.name} / ${state.settings.difficultyLabel}`;
+    setText(nodes.profileName, me.name);
+    setText(nodes.playerText, `${me.name} / ${state.settings.difficultyLabel}`);
   }
-  nodes.challengeText.textContent = challengeLabel(state);
+  setText(nodes.challengeText, challengeLabel(state));
   updateCountdown(nodes, state);
   updateResultPanel(nodes, state);
   if (state.status === "running") showMode(nodes, "game");
@@ -207,6 +207,8 @@ function updateStateText(nodes, state, playerId) {
 }
 
 function updateLobby(nodes, state, playerId) {
+  const key = state.players.map(player => `${player.id}:${player.name}:${player.color}:${player.ready}:${player.host}`).join("|");
+  if (nodes.lobbyKey === key) return; nodes.lobbyKey = key;
   nodes.lobbyPlayers.innerHTML = "";
   state.players.forEach(player => {
     const row = document.createElement("div");
@@ -221,13 +223,14 @@ function updateReadyButton(nodes, state, playerId, ready) {
   const nextReady = Boolean(me?.ready);
   const colorConflict = hasColorConflict(state.players);
   nodes.readyButton.disabled = state.status === "running" || state.status === "countdown" || colorConflict;
-  nodes.readyButton.textContent = nextReady ? "取消准备" : "准备";
+  setText(nodes.readyButton, nextReady ? "取消准备" : "准备");
   if (colorConflict) showProfileError(nodes, "两名玩家不能使用相同颜色");
   else if (nodes.profileError.textContent === "两名玩家不能使用相同颜色") showProfileError(nodes, "");
   return state.status === "running" ? false : nextReady || ready;
 }
 
 function showMode(nodes, mode) {
+  if (nodes.mode === mode) return; nodes.mode = mode;
   nodes.appRoot.classList.remove("menu-mode", "lobby-mode", "game-mode");
   nodes.appRoot.classList.add(`${mode}-mode`);
   nodes.heroPanel.classList.toggle("hidden", mode !== "menu");
@@ -244,15 +247,15 @@ function challengeLabel(state) {
 function updateCountdown(nodes, state) {
   const active = state.status === "countdown";
   nodes.countdownOverlay.classList.toggle("hidden", !active);
-  if (active) nodes.countdownNumber.textContent = Math.max(1, Math.ceil(state.countdown));
+  if (active) setText(nodes.countdownNumber, Math.max(1, Math.ceil(state.countdown)));
 }
 
 function updateResultPanel(nodes, state) {
   const result = state.result;
   nodes.resultPanel.classList.toggle("hidden", state.status !== "gameover" || !result);
   if (!result) return;
-  nodes.resultReason.textContent = result.reason;
-  nodes.resultStats.textContent = `${result.elapsed}s · ${result.difficulty}`;
+  setText(nodes.resultReason, result.reason);
+  setText(nodes.resultStats, `${result.elapsed}s · ${result.difficulty}`);
 }
 
 function showProfileError(nodes, message) {
@@ -293,3 +296,5 @@ function readSettings(nodes) {
 function randomRoomId() {
   return `ROOM${Math.floor(1000 + Math.random() * 9000)}`;
 }
+
+function setText(node, text) { const value = String(text); if (node.textContent !== value) node.textContent = value; }
