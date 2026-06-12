@@ -10,7 +10,7 @@ const input = createInput();
 const settings = createSettings();
 const socket = io(config.serverUrl || location.origin, { transports: ["websocket", "polling"] });
 const buffer = createStateBuffer();
-const session = { playerId: null, color: "red", state: null, joined: false };
+const session = { playerId: null, color: "#4f68ff", state: null, joined: false };
 
 const ui = setupUi({
   session,
@@ -33,6 +33,7 @@ socket.on("joined", data => {
   ui.afterJoin(data.roomId);
 });
 socket.on("roomList", rooms => ui.updateRooms(rooms));
+socket.on("profileError", message => ui.showProfileError(message));
 socket.on("state", state => {
   session.state = state;
   buffer.push(state);

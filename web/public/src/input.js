@@ -35,6 +35,8 @@ function keyboardVector(keys) {
 function startTouch(event, joystick, touch) {
   joystick.setPointerCapture(event.pointerId);
   touch.active = true;
+  const stick = document.querySelector("#stick");
+  if (stick) moveTouch(event, joystick, stick, touch);
 }
 
 function moveTouch(event, joystick, stick, touch) {

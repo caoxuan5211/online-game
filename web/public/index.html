@@ -70,12 +70,16 @@
             </div>
           </div>
         </div>
-        <button id="saveProfileButton" class="join-button">保存角色</button>
+        <button id="saveProfileButton" class="save-button">保存角色</button>
+        <div id="profileError" class="profile-error" aria-live="polite"></div>
         <div id="lobbyPlayers" class="lobby-players"></div>
         <button id="readyButton" class="ready-button" disabled>准备</button>
       </section>
 
       <canvas id="gameCanvas" width="1280" height="720"></canvas>
+      <div id="countdownOverlay" class="countdown-overlay hidden" aria-live="polite">
+        <span id="countdownNumber">3</span>
+      </div>
 
       <section class="game-hud">
         <button id="backGameButton" class="circle-button" aria-label="返回主页面">←</button>
@@ -87,6 +91,10 @@
         <button id="restartButton" disabled>重开</button>
         <span id="playerText">未加入</span>
       </section>
+
+      <div id="joystick" class="joystick" aria-label="移动摇杆">
+        <div id="stick" class="stick"></div>
+      </div>
 
       <section class="connection-status" aria-label="连接状态">
         <span class="spinner" aria-hidden="true"></span>

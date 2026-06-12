@@ -28,12 +28,20 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
       nodes.readyButton.disabled = false;
     },
     update(state) {
+      const me = state.players.find(player => player.id === session.playerId);
+      if (me) {
+        selectedColor = me.color;
+        syncSelectedColor(nodes, me.color);
+      }
       updateStateText(nodes, state, session.playerId);
       updateLobby(nodes, state);
       ready = updateReadyButton(nodes, state, session.playerId, ready);
     },
     updateRooms(rooms) {
       renderRooms(nodes, rooms, join);
+    },
+    showProfileError(message) {
+      showProfileError(nodes, message);
     }
   };
 
@@ -62,6 +70,8 @@ function getNodes() {
     timerText: document.querySelector("#timerText"),
     challengeText: document.querySelector("#challengeText"),
     playerText: document.querySelector("#playerText"),
+    countdownOverlay: document.querySelector("#countdownOverlay"),
+    countdownNumber: document.querySelector("#countdownNumber"),
     profileName: document.querySelector("#profileName"),
     profileRoom: document.querySelector("#profileRoom"),
     lobbyPlayers: document.querySelector("#lobbyPlayers"),
@@ -74,6 +84,7 @@ function getNodes() {
     shakeToggle: document.querySelector("#shakeToggle"),
     nameInput: document.querySelector("#nameInput"),
     saveProfileButton: document.querySelector("#saveProfileButton"),
+    profileError: document.querySelector("#profileError"),
     customColorInput: document.querySelector("#customColorInput"),
     readyButton: document.querySelector("#readyButton"),
     restartButton: document.querySelector("#restartButton"),
@@ -108,7 +119,13 @@ function bindProfile(nodes, getColor, setColor, onProfile) {
 
 function sendProfile(nodes, color, onProfile) {
   nodes.profileName.textContent = nodes.nameInput.value || "Player";
+  nodes.profileError.textContent = "";
   onProfile({ name: nodes.nameInput.value, color });
+}
+
+function syncSelectedColor(nodes, color) {
+  if (nodes.customColorInput.value !== color) nodes.customColorInput.value = color;
+  nodes.colorButtons.forEach(item => item.classList.toggle("active", item.dataset.playerColor === color));
 }
 
 function bindSettings(nodes, values, onSettings) {
@@ -141,21 +158,24 @@ function updateStateText(nodes, state, playerId) {
   nodes.statusText.textContent = state.message;
   nodes.timerText.textContent = `${state.elapsed}s`;
   nodes.restartButton.disabled = state.status !== "gameover";
-  nodes.difficultySelect.disabled = state.status === "running";
+  nodes.difficultySelect.disabled = state.status === "running" || state.status === "countdown";
   const me = state.players.find(player => player.id === playerId);
   if (me) {
     nodes.profileName.textContent = me.name;
     nodes.playerText.textContent = `${me.name} / ${state.settings.difficultyLabel}`;
   }
   nodes.challengeText.textContent = challengeLabel(state);
+  updateCountdown(nodes, state);
   if (state.status === "running") showMode(nodes, "game");
+  if (state.status === "waiting" || state.status === "countdown") showMode(nodes, "lobby");
+  if (state.status === "gameover") showMode(nodes, "game");
 }
 
 function updateLobby(nodes, state) {
   nodes.lobbyPlayers.innerHTML = "";
   state.players.forEach(player => {
     const row = document.createElement("div");
-    row.className = "lobby-player";
+    row.className = `lobby-player ${player.ready ? "is-ready" : "is-waiting"}`;
     row.innerHTML = `<span style="--player:${player.color}"></span><strong>${player.name}</strong><small>${player.ready ? "READY" : "WAITING"}</small>`;
     nodes.lobbyPlayers.appendChild(row);
   });
@@ -164,8 +184,11 @@ function updateLobby(nodes, state) {
 function updateReadyButton(nodes, state, playerId, ready) {
   const me = state.players.find(player => player.id === playerId);
   const nextReady = Boolean(me?.ready);
-  nodes.readyButton.disabled = state.status === "running";
+  const colorConflict = hasColorConflict(state.players);
+  nodes.readyButton.disabled = state.status === "running" || state.status === "countdown" || colorConflict;
   nodes.readyButton.textContent = nextReady ? "取消准备" : "准备";
+  if (colorConflict) showProfileError(nodes, "两名玩家不能使用相同颜色");
+  else if (nodes.profileError.textContent === "两名玩家不能使用相同颜色") showProfileError(nodes, "");
   return state.status === "running" ? false : nextReady || ready;
 }
 
@@ -177,9 +200,24 @@ function showMode(nodes, mode) {
 }
 
 function challengeLabel(state) {
+  if (state.status === "countdown") return `开始 ${Math.ceil(state.countdown)}s`;
   if (state.challenge) return `区域 ${state.challenge.remaining.toFixed(1)}s`;
   if (state.status === "running") return `下一次 ${state.nextChallengeIn.toFixed(0)}s`;
   return "";
+}
+
+function updateCountdown(nodes, state) {
+  const active = state.status === "countdown";
+  nodes.countdownOverlay.classList.toggle("hidden", !active);
+  if (active) nodes.countdownNumber.textContent = Math.max(1, Math.ceil(state.countdown));
+}
+
+function showProfileError(nodes, message) {
+  nodes.profileError.textContent = message || "";
+}
+
+function hasColorConflict(players) {
+  return new Set(players.map(player => player.color)).size !== players.length;
 }
 
 function syncSettingsControls(nodes, values) {

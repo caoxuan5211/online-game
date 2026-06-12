@@ -34,6 +34,7 @@ class GameRoom {
     this.settings = { difficulty: "normal" };
     this.challenge = null;
     this.challengeCount = 0;
+    this.countdown = 0;
     this.nextChallenge = randomBetween(5, 10);
     this.message = "等待两名玩家准备";
   }
@@ -48,6 +49,7 @@ class GameRoom {
 
   removePlayer(id) {
     this.players.delete(id);
+    if (this.status === "countdown") this.cancelCountdown();
     if (this.activePlayers().length < 2 && this.status === "running") {
       this.endGame("玩家断开连接");
     }
@@ -56,8 +58,9 @@ class GameRoom {
   setReady(id, ready) {
     const player = this.players.get(id);
     if (!player) return;
+    if (this.status === "countdown" && !ready) this.cancelCountdown();
     player.ready = ready;
-    if (this.canStart()) this.start();
+    if (this.canStart()) this.beginCountdown();
   }
 
   setInput(id, input) {
@@ -69,8 +72,12 @@ class GameRoom {
   setProfile(id, options) {
     const player = this.players.get(id);
     if (!player || this.status === "running") return;
+    const sameColor = this.activePlayers().some(p => p.id !== id && p.color === options.color);
+    if (sameColor) return { ok: false, message: "这个颜色已经被队友选择" };
     player.name = options.name;
     player.color = pickColor(options.color, this.activePlayers().filter(p => p.id !== id));
+    if (this.status === "countdown") this.cancelCountdown();
+    return { ok: true };
   }
 
   setSettings(settings = {}) {
@@ -87,8 +94,10 @@ class GameRoom {
     this.challenge = null;
     this.elapsed = 0;
     this.tick = 0;
+    this.countdown = 0;
     this.challengeCount = 0;
     this.nextChallenge = randomBetween(4, 8);
+    this.message = "等待两名玩家准备";
     current.forEach((p, index) => this.players.set(p.id, createPlayer(p.id, p.name, p.color, index)));
   }
 
@@ -105,6 +114,7 @@ class GameRoom {
         difficultyLabel: DIFFICULTIES[this.settings.difficulty].label
       },
       nextChallengeIn: Math.max(0, this.nextChallenge),
+      countdown: Math.max(0, this.countdown),
       challenge: this.challenge,
       tether: this.tetherState(),
       players: [...this.players.values()].map(publicPlayer),
@@ -114,7 +124,24 @@ class GameRoom {
 
   canStart() {
     const active = this.activePlayers();
-    return active.length === 2 && active.every(p => p.ready) && this.status !== "running";
+    return active.length === 2 && uniqueColors(active) && active.every(p => p.ready) && this.status === "waiting";
+  }
+
+  canContinueCountdown() {
+    const active = this.activePlayers();
+    return active.length === 2 && uniqueColors(active) && active.every(p => p.ready);
+  }
+
+  beginCountdown() {
+    this.status = "countdown";
+    this.countdown = 3.2;
+    this.message = "准备开始";
+  }
+
+  cancelCountdown() {
+    this.status = "waiting";
+    this.countdown = 0;
+    this.message = "等待两名玩家准备";
   }
 
   start() {
@@ -162,6 +189,7 @@ class GameRoom {
 }
 
 export function updateRoom(room, dt) {
+  if (updateCountdown(room, dt)) return;
   if (room.status !== "running") return;
   const players = room.activePlayers();
   if (players.length < 2) return;
@@ -186,6 +214,17 @@ function updatePlayers(players, dt) {
     player.x = clamp(player.x + player.vx * dt, PLAYER_RADIUS, WORLD.width - PLAYER_RADIUS);
     player.y = clamp(player.y + player.vy * dt, PLAYER_RADIUS, WORLD.height - PLAYER_RADIUS);
   });
+}
+
+function updateCountdown(room, dt) {
+  if (room.status !== "countdown") return false;
+  if (!room.canContinueCountdown()) {
+    room.cancelCountdown();
+    return true;
+  }
+  room.countdown = Math.max(0, room.countdown - dt);
+  if (room.countdown <= 0) room.start();
+  return true;
 }
 
 function applyElasticBand(players, dt) {
@@ -246,4 +285,8 @@ function checkFailures(room, players) {
   if (tetherDistance(players) > FAIL_DISTANCE) room.endGame("弹力带被拉断");
   const hit = players.find(player => room.obstacles.some(o => collide(player, o)));
   if (hit) room.endGame(`${hit.name} 撞上了障碍物`);
+}
+
+function uniqueColors(players) {
+  return new Set(players.map(p => p.color)).size === players.length;
 }

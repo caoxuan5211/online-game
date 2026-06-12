@@ -78,10 +78,11 @@ function createRoom(socket, data = {}) {
 function setProfile(socket, data = {}) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
-  room.setProfile(socket.id, {
+  const result = room.setProfile(socket.id, {
     name: sanitizeName(data.name),
     color: sanitizeColor(data.color)
   });
+  if (result?.ok === false) socket.emit("profileError", result.message);
   io.to(socket.data.roomId).emit("state", room.publicState());
   emitRooms();
 }
@@ -90,6 +91,7 @@ function setReady(socket, ready) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
   room.setReady(socket.id, Boolean(ready));
+  io.to(socket.data.roomId).emit("state", room.publicState());
 }
 
 function setSettings(socket, settings = {}) {
@@ -108,6 +110,7 @@ function restart(socket) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
   room.restart();
+  io.to(socket.data.roomId).emit("state", room.publicState());
 }
 
 function leaveRoom(socket) {
