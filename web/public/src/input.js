@@ -26,7 +26,7 @@ function updateKey(keys, key, pressed, onChange) {
   const before = keys.size;
   if (pressed) keys.add(value);
   else keys.delete(value);
-  if (keys.size !== before || movementKey(value)) onChange();
+  if (movementKey(value) && keys.size !== before) onChange();
 }
 
 function keyboardVector(keys) {

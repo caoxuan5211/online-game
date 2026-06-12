@@ -1,47 +1,62 @@
 const PLAYER_RADIUS = 18;
-const ACCEL = 4200;
-const MAX_SPEED = 575;
-const ACTIVE_DRAG = 0.018;
-const IDLE_DRAG = 0.00002;
-const SIDE_GRIP = 0.018;
-const REVERSE_GRIP = 0.0008;
-const LOOKAHEAD = 0.03;
+const MAX_SPEED = 520;
+const RESPONSE = 18;
+const STOP_RESPONSE = 22;
+const SNAP_DISTANCE = 96;
+const CORRECTION = 0.14;
+
+let local = null;
+let lastAt = 0;
 
 export function predictLocalState(state, playerId, input) {
-  if (!state || state.status !== "running" || !playerId) return state;
+  if (!state || state.status !== "running" || !playerId) {
+    local = null;
+    lastAt = 0;
+    return state;
+  }
+  const source = state.players.find(player => player.id === playerId);
+  if (!source) return state;
+  syncLocal(source, state.world, state.tick);
+  stepLocal(input, state.world);
   const players = state.players.map(player => (
-    player.id === playerId ? predictPlayer(player, input, state.world) : player
+    player.id === playerId ? { ...player, ...local } : player
   ));
   return { ...state, players, tether: predictTether(players) };
 }
 
-function predictPlayer(player, input, world) {
-  const next = { ...player };
-  const moving = input.x || input.y;
-  if (moving) applyTurnGrip(next, input, LOOKAHEAD);
-  next.vx += input.x * ACCEL * LOOKAHEAD;
-  next.vy += input.y * ACCEL * LOOKAHEAD;
-  const damping = moving ? Math.pow(ACTIVE_DRAG, LOOKAHEAD) : Math.pow(IDLE_DRAG, LOOKAHEAD);
-  next.vx *= damping;
-  next.vy *= damping;
-  limitSpeed(next, MAX_SPEED);
-  next.x = clamp(next.x + next.vx * LOOKAHEAD, PLAYER_RADIUS, world.width - PLAYER_RADIUS);
-  next.y = clamp(next.y + next.vy * LOOKAHEAD, PLAYER_RADIUS, world.height - PLAYER_RADIUS);
-  return next;
+function syncLocal(source, world, tick) {
+  if (!local || local.id !== source.id) {
+    local = { id: source.id, tick, x: source.x, y: source.y, vx: source.vx || 0, vy: source.vy || 0 };
+    lastAt = performance.now();
+    return;
+  }
+  if (local.tick === tick) return;
+  local.tick = tick;
+  const distance = Math.hypot(source.x - local.x, source.y - local.y);
+  if (distance > SNAP_DISTANCE) {
+    local.x = source.x;
+    local.y = source.y;
+    local.vx = source.vx || 0;
+    local.vy = source.vy || 0;
+    return;
+  }
+  local.x = clamp(local.x + (source.x - local.x) * CORRECTION, PLAYER_RADIUS, world.width - PLAYER_RADIUS);
+  local.y = clamp(local.y + (source.y - local.y) * CORRECTION, PLAYER_RADIUS, world.height - PLAYER_RADIUS);
+  local.vx += ((source.vx || 0) - local.vx) * 0.08;
+  local.vy += ((source.vy || 0) - local.vy) * 0.08;
 }
 
-function applyTurnGrip(player, input, dt) {
-  const sideX = -input.y;
-  const sideY = input.x;
-  const sideSpeed = player.vx * sideX + player.vy * sideY;
-  const sideGrip = 1 - Math.pow(SIDE_GRIP, dt);
-  player.vx -= sideX * sideSpeed * sideGrip;
-  player.vy -= sideY * sideSpeed * sideGrip;
-  const forward = player.vx * input.x + player.vy * input.y;
-  if (forward >= 0) return;
-  const reverseGrip = 1 - Math.pow(REVERSE_GRIP, dt);
-  player.vx -= input.x * forward * reverseGrip;
-  player.vy -= input.y * forward * reverseGrip;
+function stepLocal(input, world) {
+  const now = performance.now();
+  const dt = clamp((now - lastAt) / 1000, 1 / 240, 1 / 30);
+  lastAt = now;
+  const moving = input.x || input.y;
+  const mix = 1 - Math.exp(-(moving ? RESPONSE : STOP_RESPONSE) * dt);
+  local.vx += (input.x * MAX_SPEED - local.vx) * mix;
+  local.vy += (input.y * MAX_SPEED - local.vy) * mix;
+  limitSpeed(local, MAX_SPEED);
+  local.x = clamp(local.x + local.vx * dt, PLAYER_RADIUS, world.width - PLAYER_RADIUS);
+  local.y = clamp(local.y + local.vy * dt, PLAYER_RADIUS, world.height - PLAYER_RADIUS);
 }
 
 function predictTether(players) {
