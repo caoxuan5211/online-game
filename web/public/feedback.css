@@ -1,0 +1,40 @@
+.result-panel:not(.hidden) {
+  position: fixed; left: 50%; top: 50%; right: auto; bottom: auto; z-index: 9; display: grid;
+  width: min(430px, calc(100vw - 28px)); padding: 24px; gap: 14px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255,255,255,0.74); border-radius: 22px;
+  background: rgba(246,248,255,0.92); color: #19356e;
+  box-shadow: 0 34px 110px rgba(0,0,0,0.34), inset 0 1px rgba(255,255,255,0.9);
+  animation: result-pop 280ms cubic-bezier(.18,.9,.2,1.2);
+}
+.result-panel:not(.hidden)::before {
+  content: "FAILED"; color: rgba(199,71,53,0.18); font-size: 0.86rem;
+  font-weight: 900; letter-spacing: 0.22em;
+}
+.result-panel:not(.hidden) strong { font-size: 1.9rem; line-height: 1; }
+.result-panel:not(.hidden) span { color: #c74735; font-size: 1.05rem; }
+.result-panel:not(.hidden) small { color: rgba(25,53,110,0.7); }
+.result-panel:not(.hidden) div { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#resultRestartButton, #restartButton:not(:disabled) {
+  color: #fff; font-weight: 900;
+  background: linear-gradient(135deg, #ff745f, #d83d35);
+  box-shadow: 0 16px 38px rgba(216,61,53,0.32);
+}
+#resultLobbyButton { color: #19356e; background: rgba(255,255,255,0.78); font-weight: 800; }
+#restartButton:not(:disabled) {
+  min-width: 118px; transform-origin: center; animation: restart-pulse 1.15s ease-in-out infinite;
+}
+.game-mode .game-hud .circle-button { font-size: 1.28rem; font-weight: 900; }
+
+@keyframes result-pop {
+  from { opacity: 0; transform: translate(-50%, -46%) scale(.94); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes restart-pulse {
+  50% { transform: scale(1.05); box-shadow: 0 18px 46px rgba(216,61,53,0.44); }
+}
+
+@media (max-width: 760px) {
+  .result-panel:not(.hidden) { top: 46%; padding: 20px; }
+  .result-panel:not(.hidden) strong { font-size: 1.58rem; }
+}

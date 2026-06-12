@@ -7,7 +7,7 @@ import { createGameRoom, updateRoom } from "./room.js";
 
 const PORT = Number(process.env.PORT || 3000);
 const TICK_RATE = 60;
-const STATE_RATE = 30;
+const STATE_RATE = 60;
 const rooms = new Map();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "../public");
@@ -40,7 +40,7 @@ setInterval(() => {
   const shouldBroadcast = broadcastStep === 0;
   for (const [roomId, room] of rooms) {
     updateRoom(room, dt);
-    if (shouldBroadcast) io.to(roomId).emit("state", room.publicState());
+    if (shouldBroadcast) io.to(roomId).volatile.emit("state", room.publicState());
     if (room.players.size === 0) {
       rooms.delete(roomId);
       emitRooms();

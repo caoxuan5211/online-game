@@ -1,6 +1,6 @@
-import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-perf2";
-import { drawStaticScene } from "./render-cache.js?v=20260613-perf2";
-import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-perf2";
+import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-feedback3";
+import { drawStaticScene } from "./render-cache.js?v=20260613-feedback3";
+import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-feedback3";
 
 const COLORS = {
   band: "#f0c766",
@@ -8,15 +8,19 @@ const COLORS = {
   text: "#f4efe5"
 };
 const WORLD = { width: 1280, height: 720 };
+let gameoverKey = "";
+let gameoverAt = 0;
 
 export function drawGame(canvas, state, playerId, prefs = {}) {
   const world = state?.world || WORLD;
   const profile = resolveRenderProfile(prefs);
+  const failure = gameoverProgress(state);
   const ctx = prepareCanvas(canvas, world, profile);
+  ctx.filter = failure ? `grayscale(${failure}) brightness(${1 - failure * 0.34})` : "none";
   drawStaticScene(ctx, world, profile, prefs.showBackground !== false);
   if (!state) return drawCenter(ctx, canvas, "连接中");
   ctx.save();
-  if (prefs.screenShake !== false) applyScreenShake(ctx, state);
+  if (prefs.screenShake !== false) applyScreenShake(ctx, state, failure);
   drawChallenge(ctx, state, profile);
   if (profile.hints) drawDangerHints(ctx, state.obstacles, state.world);
   drawObstacles(ctx, state.obstacles, profile);
@@ -24,7 +28,8 @@ export function drawGame(canvas, state, playerId, prefs = {}) {
   drawPlayers(ctx, state.players, playerId, profile);
   drawTension(ctx, state);
   ctx.restore();
-  drawOverlay(ctx, canvas, state);
+  ctx.filter = "none";
+  drawOverlay(ctx, canvas, state, failure);
 }
 
 function drawChallenge(ctx, state, profile) {
@@ -204,8 +209,9 @@ function drawTension(ctx, state) {
   ctx.fillRect(x - width / 2, y, width * state.tether.strain, 8);
 }
 
-function drawOverlay(ctx, canvas, state) {
+function drawOverlay(ctx, canvas, state, failure) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (failure) drawFailureFade(ctx, canvas, failure);
   if (state.challenge) drawChallengeTimer(ctx, canvas, state.challenge);
   if (state.status !== "running" && state.status !== "gameover") drawCenter(ctx, canvas, state.message);
 }
@@ -226,10 +232,32 @@ function drawChallengeTimer(ctx, canvas, challenge) {
   ctx.stroke();
 }
 
-function applyScreenShake(ctx, state) {
+function applyScreenShake(ctx, state, failure) {
   if (state.status !== "gameover") return;
-  const shake = Math.sin(performance.now() / 24) * 3;
-  ctx.translate(shake, -shake * 0.5);
+  const drift = Math.sin(performance.now() / 320) * 3 * (1 - failure * 0.5);
+  ctx.translate(drift, -drift * 0.35);
+}
+
+function drawFailureFade(ctx, canvas, progress) {
+  const alpha = 0.18 + progress * 0.56;
+  const gradient = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 40, canvas.width / 2, canvas.height / 2, canvas.width * 0.62);
+  gradient.addColorStop(0, `rgba(16,18,24,${alpha * 0.44})`);
+  gradient.addColorStop(1, `rgba(0,0,0,${alpha})`);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function gameoverProgress(state) {
+  if (state?.status !== "gameover") {
+    gameoverKey = "";
+    return 0;
+  }
+  const key = `${state.result?.reason || state.message}:${state.result?.elapsed || state.elapsed}`;
+  if (gameoverKey !== key) {
+    gameoverKey = key;
+    gameoverAt = performance.now();
+  }
+  return clamp((performance.now() - gameoverAt) / 900, 0, 1);
 }
 
 function clamp(value, min, max) {

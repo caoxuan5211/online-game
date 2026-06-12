@@ -1,14 +1,16 @@
-const CACHE_NAME = "elastic-duo-v20260613-2";
-const BUILD = "20260613-perf2";
+const CACHE_NAME = "elastic-duo-v20260613-3";
+const BUILD = "20260613-feedback3";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   versioned("./styles.css"),
   versioned("./loader.css"),
+  versioned("./feedback.css"),
   versioned("./config.js"),
   "./favicon.svg",
   "./assets/background.png",
   versioned("./src/main.js"),
+  versioned("./src/prediction.js"),
   versioned("./src/preload.js"),
   versioned("./src/render.js"),
   versioned("./src/render-cache.js"),

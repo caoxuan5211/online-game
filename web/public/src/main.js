@@ -1,9 +1,10 @@
-import { drawGame } from "./render.js?v=20260613-perf2";
-import { createInput } from "./input.js?v=20260613-perf2";
-import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-perf2";
-import { createSettings } from "./settings.js?v=20260613-perf2";
-import { createStateBuffer } from "./smoothing.js?v=20260613-perf2";
-import { setupUi } from "./ui.js?v=20260613-perf2";
+import { drawGame } from "./render.js?v=20260613-feedback3";
+import { createInput } from "./input.js?v=20260613-feedback3";
+import { predictLocalState } from "./prediction.js?v=20260613-feedback3";
+import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-feedback3";
+import { createSettings } from "./settings.js?v=20260613-feedback3";
+import { createStateBuffer } from "./smoothing.js?v=20260613-feedback3";
+import { setupUi } from "./ui.js?v=20260613-feedback3";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");
@@ -51,15 +52,17 @@ socket.on("state", state => {
   ui.update(state);
 });
 
-setInterval(() => sendInput(false), 1000 / 20);
+setInterval(() => sendInput(false), 1000 / 30);
 
 function sendInput(force = false) {
   if (!session.joined || !socket.connected) return;
   const vector = input.vector();
   const now = performance.now();
   const changed = Math.abs(vector.x - lastInput.x) > 0.01 || Math.abs(vector.y - lastInput.y) > 0.01;
-  if (!force && !changed && now - lastInputAt < 250) return;
-  socket.volatile.emit("input", vector);
+  if (force && !changed && now - lastInputAt < 34) return;
+  if (!force && !changed && now - lastInputAt < 160) return;
+  if (force) socket.emit("input", vector);
+  else socket.volatile.emit("input", vector);
   lastInput = vector;
   lastInputAt = now;
 }
@@ -70,7 +73,9 @@ function joinRoom(options) {
 }
 
 function frame() {
-  drawGame(canvas, buffer.current() || session.state, session.playerId, settings.values);
+  const state = buffer.current() || session.state;
+  const predicted = predictLocalState(state, session.playerId, input.vector());
+  drawGame(canvas, predicted, session.playerId, settings.values);
   requestAnimationFrame(frame);
 }
 

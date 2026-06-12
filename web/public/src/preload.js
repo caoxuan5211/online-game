@@ -1,10 +1,12 @@
-const BUILD = "20260613-perf2";
+const BUILD = "20260613-feedback3";
 const ASSETS = [
   { url: "./assets/background.png", type: "image", label: "背景图" },
   { url: versioned("./styles.css"), label: "样式" },
   { url: versioned("./loader.css"), label: "加载界面" },
+  { url: versioned("./feedback.css"), label: "反馈界面" },
   { url: versioned("./config.js"), label: "配置" },
   { url: versioned("./src/main.js"), label: "主程序" },
+  { url: versioned("./src/prediction.js"), label: "预测模块" },
   { url: versioned("./src/render.js"), label: "渲染模块" },
   { url: versioned("./src/render-cache.js"), label: "场景缓存" },
   { url: versioned("./src/render-quality.js"), label: "性能模块" },
