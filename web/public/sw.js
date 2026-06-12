@@ -1,22 +1,23 @@
-const CACHE_NAME = "elastic-duo-v20260613-1";
+const CACHE_NAME = "elastic-duo-v20260613-2";
+const BUILD = "20260613-perf2";
 const CORE_ASSETS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./loader.css",
-  "./config.js",
+  versioned("./styles.css"),
+  versioned("./loader.css"),
+  versioned("./config.js"),
   "./favicon.svg",
   "./assets/background.png",
-  "./src/main.js",
-  "./src/preload.js",
-  "./src/render.js",
-  "./src/render-cache.js",
-  "./src/render-quality.js",
-  "./src/render-utils.js",
-  "./src/settings.js",
-  "./src/smoothing.js",
-  "./src/input.js",
-  "./src/ui.js"
+  versioned("./src/main.js"),
+  versioned("./src/preload.js"),
+  versioned("./src/render.js"),
+  versioned("./src/render-cache.js"),
+  versioned("./src/render-quality.js"),
+  versioned("./src/render-utils.js"),
+  versioned("./src/settings.js"),
+  versioned("./src/smoothing.js"),
+  versioned("./src/input.js"),
+  versioned("./src/ui.js")
 ];
 const CACHE_FIRST = /\.(png|svg|jpg|jpeg|webp|ico)$/i;
 
@@ -65,4 +66,8 @@ async function networkFirst(request) {
   } catch {
     return (await caches.match(request)) || Response.error();
   }
+}
+
+function versioned(url) {
+  return `${url}?v=${BUILD}`;
 }

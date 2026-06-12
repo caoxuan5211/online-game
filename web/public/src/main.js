@@ -1,9 +1,9 @@
-import { drawGame } from "./render.js";
-import { createInput } from "./input.js";
-import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js";
-import { createSettings } from "./settings.js";
-import { createStateBuffer } from "./smoothing.js";
-import { setupUi } from "./ui.js";
+import { drawGame } from "./render.js?v=20260613-perf2";
+import { createInput } from "./input.js?v=20260613-perf2";
+import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-perf2";
+import { createSettings } from "./settings.js?v=20260613-perf2";
+import { createStateBuffer } from "./smoothing.js?v=20260613-perf2";
+import { setupUi } from "./ui.js?v=20260613-perf2";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");

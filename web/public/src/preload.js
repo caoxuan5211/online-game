@@ -1,16 +1,17 @@
+const BUILD = "20260613-perf2";
 const ASSETS = [
   { url: "./assets/background.png", type: "image", label: "背景图" },
-  { url: "./styles.css", label: "样式" },
-  { url: "./loader.css", label: "加载界面" },
-  { url: "./config.js", label: "配置" },
-  { url: "./src/main.js", label: "主程序" },
-  { url: "./src/render.js", label: "渲染模块" },
-  { url: "./src/render-cache.js", label: "场景缓存" },
-  { url: "./src/render-quality.js", label: "性能模块" },
-  { url: "./src/ui.js", label: "界面模块" },
-  { url: "./src/input.js", label: "输入模块" },
-  { url: "./src/smoothing.js", label: "同步模块" },
-  { url: "./src/render-utils.js", label: "绘制工具" },
+  { url: versioned("./styles.css"), label: "样式" },
+  { url: versioned("./loader.css"), label: "加载界面" },
+  { url: versioned("./config.js"), label: "配置" },
+  { url: versioned("./src/main.js"), label: "主程序" },
+  { url: versioned("./src/render.js"), label: "渲染模块" },
+  { url: versioned("./src/render-cache.js"), label: "场景缓存" },
+  { url: versioned("./src/render-quality.js"), label: "性能模块" },
+  { url: versioned("./src/ui.js"), label: "界面模块" },
+  { url: versioned("./src/input.js"), label: "输入模块" },
+  { url: versioned("./src/smoothing.js"), label: "同步模块" },
+  { url: versioned("./src/render-utils.js"), label: "绘制工具" },
   { url: "/socket.io/socket.io.js", label: "联机模块" }
 ];
 
@@ -61,8 +62,12 @@ function loadImage(url) {
 async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   try {
-    await navigator.serviceWorker.register("./sw.js");
+    await navigator.serviceWorker.register(versioned("./sw.js"));
   } catch {}
+}
+
+function versioned(url) {
+  return `${url}${url.includes("?") ? "&" : "?"}v=${BUILD}`;
 }
 
 function updateProgress(percent, label) {
