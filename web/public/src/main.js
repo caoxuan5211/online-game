@@ -6,9 +6,9 @@ import { setupUi } from "./ui.js";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");
-const input = createInput();
 const settings = createSettings();
 const socket = io(config.serverUrl || location.origin, { transports: ["websocket", "polling"] });
+const input = createInput(sendInput);
 const buffer = createStateBuffer();
 const session = { playerId: null, color: "#4f68ff", state: null, joined: false };
 
@@ -34,6 +34,7 @@ socket.on("joined", data => {
 });
 socket.on("roomList", rooms => ui.updateRooms(rooms));
 socket.on("profileError", message => ui.showProfileError(message));
+socket.on("joinError", message => ui.showJoinError(message));
 socket.on("state", state => {
   session.state = state;
   buffer.push(state);
@@ -41,9 +42,13 @@ socket.on("state", state => {
 });
 
 setInterval(() => {
-  if (!session.joined) return;
-  socket.emit("input", input.vector());
+  sendInput();
 }, 1000 / 60);
+
+function sendInput() {
+  if (!session.joined || !socket.connected) return;
+  socket.volatile.emit("input", input.vector());
+}
 
 function joinRoom(options) {
   session.color = options.color;

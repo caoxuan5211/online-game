@@ -1,23 +1,8 @@
 import { createChallenge, playerInZone } from "./challenge.js";
 import {
-  DIFFICULTIES,
-  FAIL_DISTANCE,
-  MAX_OBSTACLES,
-  PLAYER_RADIUS,
-  REST_LENGTH,
-  WORLD,
-  clamp,
-  collide,
-  createObstacle,
-  createPlayer,
-  inBounds,
-  limitSpeed,
-  normalizeInput,
-  pickColor,
-  publicPlayer,
-  randomBetween,
-  resetPlayer,
-  tetherDistance
+  DIFFICULTIES, FAIL_DISTANCE, MAX_OBSTACLES, PLAYER_RADIUS, REST_LENGTH, WORLD,
+  clamp, collide, createObstacle, createPlayer, inBounds, limitSpeed, normalizeInput,
+  pickColor, publicPlayer, randomBetween, resetPlayer, tetherDistance
 } from "./physics.js";
 export function createGameRoom(id) {
   return new GameRoom(id);
@@ -57,10 +42,12 @@ class GameRoom {
 
   setReady(id, ready) {
     const player = this.players.get(id);
-    if (!player) return;
+    if (!player || this.status === "running" || this.status === "gameover") return { ok: false };
+    if (ready && !this.hasUniqueColor(id)) return { ok: false, message: "两名玩家不能使用相同颜色" };
     if (this.status === "countdown" && !ready) this.cancelCountdown();
     player.ready = ready;
     if (this.canStart()) this.beginCountdown();
+    return { ok: true };
   }
 
   setInput(id, input) {
@@ -161,6 +148,10 @@ class GameRoom {
     return [...this.players.values()].slice(0, 2);
   }
 
+  canJoin(id) {
+    return this.players.has(id) || (this.status === "waiting" && this.activePlayers().length < 2);
+  }
+
   endGame(reason) {
     this.status = "gameover";
     this.message = reason;
@@ -186,6 +177,12 @@ class GameRoom {
       difficulty: DIFFICULTIES[this.settings.difficulty].label
     };
   }
+
+  hasUniqueColor(id) {
+    const player = this.players.get(id);
+    if (!player) return false;
+    return !this.activePlayers().some(p => p.id !== id && p.color === player.color);
+  }
 }
 
 export function updateRoom(room, dt) {
@@ -204,13 +201,13 @@ export function updateRoom(room, dt) {
 
 function updatePlayers(players, dt) {
   players.forEach(player => {
-    const accel = 2600;
+    const accel = 3400;
     player.vx += player.input.x * accel * dt;
     player.vy += player.input.y * accel * dt;
-    const damping = player.input.x || player.input.y ? Math.pow(0.035, dt) : Math.pow(0.0008, dt);
+    const damping = player.input.x || player.input.y ? Math.pow(0.026, dt) : Math.pow(0.00002, dt);
     player.vx *= damping;
     player.vy *= damping;
-    limitSpeed(player, 520);
+    limitSpeed(player, 560);
     player.x = clamp(player.x + player.vx * dt, PLAYER_RADIUS, WORLD.width - PLAYER_RADIUS);
     player.y = clamp(player.y + player.vy * dt, PLAYER_RADIUS, WORLD.height - PLAYER_RADIUS);
   });

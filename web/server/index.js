@@ -58,6 +58,11 @@ function joinRoom(socket, data = {}) {
   const color = sanitizeColor(data.color);
   const name = sanitizeName(data.name);
   const room = getRoom(roomId);
+  if (!room.canJoin(socket.id)) {
+    socket.emit("joinError", room.status === "waiting" ? "房间已满" : "游戏已经开始");
+    return;
+  }
+  leaveCurrentRoom(socket);
   socket.join(roomId);
   socket.data.roomId = roomId;
   room.addPlayer(socket.id, { color, name });
@@ -90,7 +95,8 @@ function setProfile(socket, data = {}) {
 function setReady(socket, ready) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
-  room.setReady(socket.id, Boolean(ready));
+  const result = room.setReady(socket.id, Boolean(ready));
+  if (result?.ok === false && result.message) socket.emit("profileError", result.message);
   io.to(socket.data.roomId).emit("state", room.publicState());
 }
 
@@ -108,16 +114,22 @@ function setInput(socket, input = {}) {
 
 function restart(socket) {
   const room = rooms.get(socket.data.roomId);
-  if (!room) return;
+  if (!room || room.status === "countdown") return;
   room.restart();
   io.to(socket.data.roomId).emit("state", room.publicState());
 }
 
 function leaveRoom(socket) {
+  leaveCurrentRoom(socket);
+  emitRooms();
+}
+
+function leaveCurrentRoom(socket) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
   room.removePlayer(socket.id);
-  emitRooms();
+  socket.leave(socket.data.roomId);
+  socket.data.roomId = null;
 }
 
 function getRoom(roomId) {

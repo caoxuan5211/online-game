@@ -18,6 +18,7 @@ html, body {
 button, input, select { font: inherit; }
 button { border: 0; cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: 0.52; }
+button:not(:disabled):active { filter: brightness(0.96); transform: scale(0.98); }
 button:focus-visible, input:focus-visible, select:focus-visible {
   outline: 3px solid rgba(121, 184, 255, 0.84); outline-offset: 3px;
 }

@@ -2,6 +2,8 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
   const nodes = getNodes();
   let selectedColor = "#4f68ff";
   let ready = false;
+  let joinPending = false;
+  let joinTimer = null;
   bindShell(nodes);
   bindSettings(nodes, settings.values, onSettings);
   bindProfile(nodes, () => selectedColor, value => { selectedColor = value; }, onProfile);
@@ -22,6 +24,10 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
       nodes.statusText.textContent = text;
     },
     afterJoin(roomId) {
+      joinPending = false;
+      clearTimeout(joinTimer);
+      nodes.createRoomButton.disabled = false;
+      nodes.joinError.textContent = "";
       nodes.profileRoom.textContent = roomId.toUpperCase();
       nodes.joinPanel.classList.add("hidden");
       showMode(nodes, "lobby");
@@ -42,10 +48,25 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
     },
     showProfileError(message) {
       showProfileError(nodes, message);
+    },
+    showJoinError(message) {
+      joinPending = false;
+      clearTimeout(joinTimer);
+      nodes.createRoomButton.disabled = false;
+      nodes.joinError.textContent = message || "";
     }
   };
 
   function join(roomId) {
+    if (joinPending) return;
+    joinPending = true;
+    nodes.createRoomButton.disabled = true;
+    nodes.joinError.textContent = "正在进入房间...";
+    joinTimer = setTimeout(() => {
+      joinPending = false;
+      nodes.createRoomButton.disabled = false;
+      nodes.joinError.textContent = "进入房间超时，请重试";
+    }, 5000);
     onJoin({ name: nodes.nameInput.value, roomId, color: selectedColor });
   }
 }
@@ -57,6 +78,7 @@ function getNodes() {
     joinPanel: document.querySelector("#joinPanel"),
     lobbyPanel: document.querySelector("#lobbyPanel"),
     roomList: document.querySelector("#roomList"),
+    joinError: document.querySelector("#joinError"),
     startButton: document.querySelector("#startButton"),
     closeJoinButton: document.querySelector("#closeJoinButton"),
     createRoomButton: document.querySelector("#createRoomButton"),
