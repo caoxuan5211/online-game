@@ -1,7 +1,8 @@
 import { createChallenge, playerInZone } from "./challenge.js";
+import { updatePlayers } from "./movement.js";
 import {
-  DIFFICULTIES, FAIL_DISTANCE, MAX_OBSTACLES, PLAYER_RADIUS, REST_LENGTH, WORLD,
-  clamp, collide, createObstacle, createPlayer, inBounds, limitSpeed, normalizeInput,
+  DIFFICULTIES, FAIL_DISTANCE, MAX_OBSTACLES, REST_LENGTH, WORLD,
+  clamp, collide, createObstacle, createPlayer, inBounds, normalizeInput,
   pickColor, publicPlayer, randomBetween, resetPlayer, tetherDistance
 } from "./physics.js";
 export function createGameRoom(id) {
@@ -201,20 +202,6 @@ export function updateRoom(room, dt) {
   updateObstacles(room, dt);
   updateChallenge(room, dt);
   checkFailures(room, players);
-}
-
-function updatePlayers(players, dt) {
-  players.forEach(player => {
-    const accel = 3400;
-    player.vx += player.input.x * accel * dt;
-    player.vy += player.input.y * accel * dt;
-    const damping = player.input.x || player.input.y ? Math.pow(0.026, dt) : Math.pow(0.00002, dt);
-    player.vx *= damping;
-    player.vy *= damping;
-    limitSpeed(player, 560);
-    player.x = clamp(player.x + player.vx * dt, PLAYER_RADIUS, WORLD.width - PLAYER_RADIUS);
-    player.y = clamp(player.y + player.vy * dt, PLAYER_RADIUS, WORLD.height - PLAYER_RADIUS);
-  });
 }
 
 function updateCountdown(room, dt) {

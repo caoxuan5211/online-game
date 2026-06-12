@@ -1,4 +1,4 @@
-const DELAY_MS = 20;
+const DELAY_MS = 16;
 
 export function createStateBuffer() {
   const frames = [];
