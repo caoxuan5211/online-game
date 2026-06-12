@@ -1,31 +1,17 @@
-export function setupUi({ session, settings, onJoin, onReady, onRestart, onSettings }) {
+export function setupUi({ session, settings, onJoin, onProfile, onReady, onRestart, onSettings }) {
   const nodes = getNodes();
-  let selectedColor = "red";
+  let selectedColor = "#4f68ff";
   let ready = false;
-  bindSettings(nodes, settings.values, onSettings);
   bindShell(nodes);
+  bindSettings(nodes, settings.values, onSettings);
+  bindProfile(nodes, () => selectedColor, value => { selectedColor = value; }, onProfile);
 
-  nodes.colorButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      selectedColor = button.dataset.color;
-      setActiveColor(nodes.colorButtons, selectedColor);
-    });
-  });
-
-  nodes.joinButton.addEventListener("click", () => {
-    onJoin({
-      name: nodes.nameInput.value,
-      roomId: nodes.roomInput.value,
-      color: selectedColor
-    });
-  });
-
+  nodes.createRoomButton.addEventListener("click", () => join(randomRoomId()));
   nodes.readyButton.addEventListener("click", () => {
     ready = !ready;
     nodes.readyButton.textContent = ready ? "取消准备" : "准备";
     onReady(ready);
   });
-
   nodes.restartButton.addEventListener("click", () => {
     ready = false;
     onRestart();
@@ -36,19 +22,24 @@ export function setupUi({ session, settings, onJoin, onReady, onRestart, onSetti
       nodes.statusText.textContent = text;
     },
     afterJoin(roomId) {
-      nodes.joinPanel.classList.add("hidden");
-      nodes.heroPanel.classList.add("hidden");
-      nodes.appRoot.classList.remove("menu-mode");
-      nodes.appRoot.classList.add("game-mode");
-      nodes.readyButton.disabled = false;
       nodes.profileRoom.textContent = roomId.toUpperCase();
-      nodes.playerText.textContent = `房间 ${roomId} / ${session.color}`;
+      nodes.joinPanel.classList.add("hidden");
+      showMode(nodes, "lobby");
+      nodes.readyButton.disabled = false;
     },
     update(state) {
       updateStateText(nodes, state, session.playerId);
+      updateLobby(nodes, state);
       ready = updateReadyButton(nodes, state, session.playerId, ready);
+    },
+    updateRooms(rooms) {
+      renderRooms(nodes, rooms, join);
     }
   };
+
+  function join(roomId) {
+    onJoin({ name: nodes.nameInput.value, roomId, color: selectedColor });
+  }
 }
 
 function getNodes() {
@@ -56,8 +47,13 @@ function getNodes() {
     appRoot: document.querySelector("#appRoot"),
     heroPanel: document.querySelector("#heroPanel"),
     joinPanel: document.querySelector("#joinPanel"),
+    lobbyPanel: document.querySelector("#lobbyPanel"),
+    roomList: document.querySelector("#roomList"),
     startButton: document.querySelector("#startButton"),
     closeJoinButton: document.querySelector("#closeJoinButton"),
+    createRoomButton: document.querySelector("#createRoomButton"),
+    backHomeButton: document.querySelector("#backHomeButton"),
+    backGameButton: document.querySelector("#backGameButton"),
     menuSettingsButton: document.querySelector("#menuSettingsButton"),
     helpButton: document.querySelector("#helpButton"),
     helpPanel: document.querySelector("#helpPanel"),
@@ -68,6 +64,7 @@ function getNodes() {
     playerText: document.querySelector("#playerText"),
     profileName: document.querySelector("#profileName"),
     profileRoom: document.querySelector("#profileRoom"),
+    lobbyPlayers: document.querySelector("#lobbyPlayers"),
     settingsButton: document.querySelector("#settingsButton"),
     settingsPanel: document.querySelector("#settingsPanel"),
     closeSettingsButton: document.querySelector("#closeSettingsButton"),
@@ -76,16 +73,61 @@ function getNodes() {
     backgroundToggle: document.querySelector("#backgroundToggle"),
     shakeToggle: document.querySelector("#shakeToggle"),
     nameInput: document.querySelector("#nameInput"),
-    roomInput: document.querySelector("#roomInput"),
-    joinButton: document.querySelector("#joinButton"),
+    saveProfileButton: document.querySelector("#saveProfileButton"),
     readyButton: document.querySelector("#readyButton"),
     restartButton: document.querySelector("#restartButton"),
-    colorButtons: [...document.querySelectorAll("[data-color]")]
+    colorButtons: [...document.querySelectorAll("[data-player-color]")]
   };
 }
 
-function setActiveColor(buttons, color) {
-  buttons.forEach(button => button.classList.toggle("active", button.dataset.color === color));
+function bindShell(nodes) {
+  nodes.startButton.addEventListener("click", () => nodes.joinPanel.classList.remove("hidden"));
+  nodes.closeJoinButton.addEventListener("click", () => nodes.joinPanel.classList.add("hidden"));
+  nodes.helpButton.addEventListener("click", () => nodes.helpPanel.classList.toggle("open"));
+  nodes.closeHelpButton.addEventListener("click", () => nodes.helpPanel.classList.remove("open"));
+  [nodes.backHomeButton, nodes.backGameButton].forEach(button => button.addEventListener("click", () => location.reload()));
+}
+
+function bindProfile(nodes, getColor, setColor, onProfile) {
+  nodes.colorButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      setColor(button.dataset.playerColor);
+      nodes.colorButtons.forEach(item => item.classList.toggle("active", item === button));
+      if (!nodes.lobbyPanel.classList.contains("hidden")) sendProfile(nodes, getColor(), onProfile);
+    });
+  });
+  nodes.saveProfileButton.addEventListener("click", () => sendProfile(nodes, getColor(), onProfile));
+}
+
+function sendProfile(nodes, color, onProfile) {
+  nodes.profileName.textContent = nodes.nameInput.value || "Player";
+  onProfile({ name: nodes.nameInput.value, color });
+}
+
+function bindSettings(nodes, values, onSettings) {
+  syncSettingsControls(nodes, values);
+  nodes.settingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
+  nodes.menuSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
+  nodes.closeSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.remove("open"));
+  [nodes.difficultySelect, nodes.qualitySelect, nodes.backgroundToggle, nodes.shakeToggle].forEach(node => {
+    node.addEventListener("change", () => onSettings(readSettings(nodes)));
+  });
+}
+
+function renderRooms(nodes, rooms, join) {
+  const open = rooms.filter(room => room.status !== "running" && room.players < room.capacity);
+  nodes.roomList.innerHTML = "";
+  if (open.length === 0) {
+    nodes.roomList.innerHTML = `<div class="empty-room">暂无可加入房间</div>`;
+    return;
+  }
+  open.forEach(room => {
+    const button = document.createElement("button");
+    button.className = "room-card";
+    button.innerHTML = `<strong>${room.id}</strong><span>${room.players}/${room.capacity} · ${room.difficulty}</span>`;
+    button.addEventListener("click", () => join(room.id));
+    nodes.roomList.appendChild(button);
+  });
 }
 
 function updateStateText(nodes, state, playerId) {
@@ -96,9 +138,20 @@ function updateStateText(nodes, state, playerId) {
   const me = state.players.find(player => player.id === playerId);
   if (me) {
     nodes.profileName.textContent = me.name;
-    nodes.playerText.textContent = `${me.name} / ${colorName(me.color)} / ${state.settings.difficultyLabel}`;
+    nodes.playerText.textContent = `${me.name} / ${state.settings.difficultyLabel}`;
   }
   nodes.challengeText.textContent = challengeLabel(state);
+  if (state.status === "running") showMode(nodes, "game");
+}
+
+function updateLobby(nodes, state) {
+  nodes.lobbyPlayers.innerHTML = "";
+  state.players.forEach(player => {
+    const row = document.createElement("div");
+    row.className = "lobby-player";
+    row.innerHTML = `<span style="--player:${player.color}"></span><strong>${player.name}</strong><small>${player.ready ? "READY" : "WAITING"}</small>`;
+    nodes.lobbyPlayers.appendChild(row);
+  });
 }
 
 function updateReadyButton(nodes, state, playerId, ready) {
@@ -109,29 +162,17 @@ function updateReadyButton(nodes, state, playerId, ready) {
   return state.status === "running" ? false : nextReady || ready;
 }
 
+function showMode(nodes, mode) {
+  nodes.appRoot.classList.remove("menu-mode", "lobby-mode", "game-mode");
+  nodes.appRoot.classList.add(`${mode}-mode`);
+  nodes.heroPanel.classList.toggle("hidden", mode !== "menu");
+  nodes.lobbyPanel.classList.toggle("hidden", mode !== "lobby");
+}
+
 function challengeLabel(state) {
   if (state.challenge) return `区域 ${state.challenge.remaining.toFixed(1)}s`;
   if (state.status === "running") return `下一次 ${state.nextChallengeIn.toFixed(0)}s`;
   return "";
-}
-
-function colorName(color) {
-  if (color === "red") return "红色";
-  if (color === "blue") return "蓝色";
-  return "观战";
-}
-
-function bindSettings(nodes, values, onSettings) {
-  syncSettingsControls(nodes, values);
-  nodes.settingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
-  nodes.menuSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
-  nodes.closeSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.remove("open"));
-  [nodes.difficultySelect, nodes.qualitySelect].forEach(node => {
-    node.addEventListener("change", () => onSettings(readSettings(nodes)));
-  });
-  [nodes.backgroundToggle, nodes.shakeToggle].forEach(node => {
-    node.addEventListener("change", () => onSettings(readSettings(nodes)));
-  });
 }
 
 function syncSettingsControls(nodes, values) {
@@ -150,9 +191,6 @@ function readSettings(nodes) {
   };
 }
 
-function bindShell(nodes) {
-  nodes.startButton.addEventListener("click", () => nodes.joinPanel.classList.remove("hidden"));
-  nodes.closeJoinButton.addEventListener("click", () => nodes.joinPanel.classList.add("hidden"));
-  nodes.helpButton.addEventListener("click", () => nodes.helpPanel.classList.toggle("open"));
-  nodes.closeHelpButton.addEventListener("click", () => nodes.helpPanel.classList.remove("open"));
+function randomRoomId() {
+  return `ROOM${Math.floor(1000 + Math.random() * 9000)}`;
 }

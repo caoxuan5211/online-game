@@ -24,7 +24,10 @@ app.use((req, res, next) => {
 app.use(express.static(join(__dirname, "../public")));
 
 io.on("connection", socket => {
+  socket.emit("roomList", publicRooms());
+  socket.on("createRoom", data => createRoom(socket, data));
   socket.on("joinRoom", data => joinRoom(socket, data));
+  socket.on("setProfile", data => setProfile(socket, data));
   socket.on("setReady", ready => setReady(socket, ready));
   socket.on("setSettings", settings => setSettings(socket, settings));
   socket.on("input", input => setInput(socket, input));
@@ -39,7 +42,10 @@ setInterval(() => {
   for (const [roomId, room] of rooms) {
     updateRoom(room, dt);
     io.to(roomId).emit("state", room.publicState());
-    if (room.players.size === 0) rooms.delete(roomId);
+    if (room.players.size === 0) {
+      rooms.delete(roomId);
+      emitRooms();
+    }
   }
 }, 1000 / TICK_RATE);
 
@@ -49,7 +55,7 @@ server.listen(PORT, "0.0.0.0", () => {
 
 function joinRoom(socket, data = {}) {
   const roomId = sanitizeRoom(data.roomId);
-  const color = data.color === "blue" ? "blue" : "red";
+  const color = sanitizeColor(data.color);
   const name = sanitizeName(data.name);
   const room = getRoom(roomId);
   socket.join(roomId);
@@ -58,6 +64,26 @@ function joinRoom(socket, data = {}) {
   room.setSettings(data.settings);
   socket.emit("joined", { playerId: socket.id, roomId });
   io.to(roomId).emit("state", room.publicState());
+  emitRooms();
+}
+
+function createRoom(socket, data = {}) {
+  const roomId = sanitizeRoom(data.roomId || randomRoomId());
+  const room = getRoom(roomId);
+  room.setSettings(data.settings);
+  socket.emit("roomCreated", { roomId });
+  emitRooms();
+}
+
+function setProfile(socket, data = {}) {
+  const room = rooms.get(socket.data.roomId);
+  if (!room) return;
+  room.setProfile(socket.id, {
+    name: sanitizeName(data.name),
+    color: sanitizeColor(data.color)
+  });
+  io.to(socket.data.roomId).emit("state", room.publicState());
+  emitRooms();
 }
 
 function setReady(socket, ready) {
@@ -88,6 +114,7 @@ function leaveRoom(socket) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
   room.removePlayer(socket.id);
+  emitRooms();
 }
 
 function getRoom(roomId) {
@@ -101,6 +128,23 @@ function sanitizeRoom(value) {
 
 function sanitizeName(value) {
   return String(value || "Player").replace(/[<>]/g, "").slice(0, 16) || "Player";
+}
+
+function sanitizeColor(value) {
+  const color = String(value || "#4f68ff").trim();
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : "#4f68ff";
+}
+
+function randomRoomId() {
+  return `ROOM${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+function publicRooms() {
+  return [...rooms.values()].map(room => room.publicSummary());
+}
+
+function emitRooms() {
+  io.emit("roomList", publicRooms());
 }
 
 function clamp(value, min, max) {

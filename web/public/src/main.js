@@ -16,6 +16,7 @@ const ui = setupUi({
   session,
   settings,
   onJoin: joinRoom,
+  onProfile: data => socket.emit("setProfile", data),
   onReady: ready => socket.emit("setReady", ready),
   onRestart: () => socket.emit("restart"),
   onSettings: next => {
@@ -31,6 +32,7 @@ socket.on("joined", data => {
   session.joined = true;
   ui.afterJoin(data.roomId);
 });
+socket.on("roomList", rooms => ui.updateRooms(rooms));
 socket.on("state", state => {
   session.state = state;
   buffer.push(state);

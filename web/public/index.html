@@ -21,81 +21,75 @@
         </div>
       </section>
 
-      <button id="settingsButton" class="top-settings" aria-label="设置">
-        <span aria-hidden="true">⚙</span>
-      </button>
+      <button id="settingsButton" class="top-settings" aria-label="设置"><span aria-hidden="true">⚙</span></button>
 
       <section id="heroPanel" class="hero-panel" aria-label="主菜单">
-        <h1>ELASTIC<br />DUO</h1>
-        <p>弹性之间，连接彼此</p>
-
+        <h1><span>ELASTIC</span><span>DUO</span></h1>
         <nav class="main-menu" aria-label="游戏菜单">
           <button id="startButton" class="start-button">
             <span class="start-orb" aria-hidden="true"></span>
-            <span class="button-copy">
-              <strong>开始游戏</strong>
-              <small>START</small>
-            </span>
+            <span class="button-copy"><strong>开始游戏</strong><small>START</small></span>
             <span class="arrow-circle" aria-hidden="true">→</span>
           </button>
-
           <button id="menuSettingsButton" class="menu-link">
             <span class="line-icon" aria-hidden="true">◎</span>
-            <span>
-              <strong>设置</strong>
-              <small>SETTINGS</small>
-            </span>
+            <span><strong>设置</strong><small>SETTINGS</small></span>
           </button>
-
           <button id="helpButton" class="menu-link">
             <span class="line-icon" aria-hidden="true">?</span>
-            <span>
-              <strong>帮助</strong>
-              <small>HELP</small>
-            </span>
+            <span><strong>帮助</strong><small>HELP</small></span>
           </button>
         </nav>
       </section>
 
-      <section id="joinPanel" class="room-panel hidden" aria-label="房间设置">
+      <section id="joinPanel" class="room-panel hidden" aria-label="房间匹配">
         <div class="panel-head">
-          <strong>进入房间</strong>
+          <strong>选择房间</strong>
           <button id="closeJoinButton" class="circle-button" aria-label="关闭房间面板">×</button>
         </div>
-        <label>
-          昵称
-          <input id="nameInput" maxlength="16" value="Player" />
-        </label>
-        <label>
-          房间
-          <input id="roomInput" maxlength="24" value="room1" />
-        </label>
-        <div class="segmented">
-          <button id="redButton" class="active" data-color="red">红队</button>
-          <button id="blueButton" data-color="blue">蓝队</button>
+        <div id="roomList" class="room-list"></div>
+        <button id="createRoomButton" class="join-button">创建房间</button>
+      </section>
+
+      <section id="lobbyPanel" class="lobby-panel hidden" aria-label="等待大厅">
+        <div class="panel-head">
+          <strong>等待大厅</strong>
+          <button id="backHomeButton" class="circle-button" aria-label="返回主页面">←</button>
         </div>
-        <button id="joinButton" class="join-button">进入房间</button>
+        <div class="lobby-grid">
+          <label>昵称 <input id="nameInput" maxlength="16" value="Player" /></label>
+          <div>
+            <span class="field-label">颜色</span>
+            <div class="color-swatches">
+              <button class="active" data-player-color="#4f68ff" style="--swatch:#4f68ff"></button>
+              <button data-player-color="#f05a52" style="--swatch:#f05a52"></button>
+              <button data-player-color="#36c6a7" style="--swatch:#36c6a7"></button>
+              <button data-player-color="#f0c766" style="--swatch:#f0c766"></button>
+              <button data-player-color="#c56bff" style="--swatch:#c56bff"></button>
+            </div>
+          </div>
+        </div>
+        <button id="saveProfileButton" class="join-button">保存角色</button>
+        <div id="lobbyPlayers" class="lobby-players"></div>
+        <button id="readyButton" class="ready-button" disabled>准备</button>
       </section>
 
       <canvas id="gameCanvas" width="1280" height="720"></canvas>
 
       <section class="game-hud">
+        <button id="backGameButton" class="circle-button" aria-label="返回主页面">←</button>
         <span id="timerText">0s</span>
         <span id="challengeText"></span>
       </section>
 
       <section class="game-controls">
-        <button id="readyButton" class="ready-button" disabled>准备</button>
         <button id="restartButton" disabled>重开</button>
         <span id="playerText">未加入</span>
       </section>
 
       <section class="connection-status" aria-label="连接状态">
         <span class="spinner" aria-hidden="true"></span>
-        <span>
-          <strong id="statusText">连接中...</strong>
-          <small>CONNECTING...</small>
-        </span>
+        <span><strong id="statusText">连接中...</strong><small>CONNECTING...</small></span>
       </section>
 
       <aside id="settingsPanel" class="settings-panel" aria-label="游戏设置">
@@ -103,29 +97,21 @@
           <strong>设置</strong>
           <button id="closeSettingsButton" class="circle-button" aria-label="关闭设置">×</button>
         </div>
-        <label>
-          难度
+        <label>难度
           <select id="difficultySelect">
             <option value="easy">轻松</option>
             <option value="normal">标准</option>
             <option value="hard">高压</option>
           </select>
         </label>
-        <label>
-          画质
+        <label>画质
           <select id="qualitySelect">
             <option value="high">高</option>
             <option value="low">低</option>
           </select>
         </label>
-        <label class="toggle-row">
-          <input id="backgroundToggle" type="checkbox" />
-          显示场景背景
-        </label>
-        <label class="toggle-row">
-          <input id="shakeToggle" type="checkbox" />
-          屏幕震动
-        </label>
+        <label class="toggle-row"><input id="backgroundToggle" type="checkbox" />显示场景背景</label>
+        <label class="toggle-row"><input id="shakeToggle" type="checkbox" />屏幕震动</label>
       </aside>
 
       <aside id="helpPanel" class="help-panel" aria-label="帮助">
@@ -133,7 +119,7 @@
           <strong>帮助</strong>
           <button id="closeHelpButton" class="circle-button" aria-label="关闭帮助">×</button>
         </div>
-        <p>两名玩家进入同一房间后准备开始。使用 WASD 或方向键移动，避开障碍，并在颜色区域闪烁时回到对应区域。</p>
+        <p>创建或加入房间，在等待大厅调整昵称和颜色。两人准备后开始，用 WASD 或方向键移动。</p>
       </aside>
     </main>
 

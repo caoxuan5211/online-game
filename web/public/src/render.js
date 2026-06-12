@@ -1,8 +1,6 @@
+import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js";
+
 const COLORS = {
-  red: "#f05a52",
-  redGlow: "rgba(240,90,82,0.34)",
-  blue: "#4aa8e8",
-  blueGlow: "rgba(74,168,232,0.34)",
   band: "#f0c766",
   danger: "#e6dfd1",
   text: "#f4efe5"
@@ -99,20 +97,22 @@ function drawChallenge(ctx, state) {
   if (!state.challenge) return;
   const urgency = 1 - state.challenge.remaining / state.challenge.duration;
   const pulse = 0.18 + Math.sin(performance.now() / 58) * 0.09 + urgency * 0.16;
-  drawZone(ctx, state.challenge.zones.red, state.world, COLORS.red, pulse);
-  drawZone(ctx, state.challenge.zones.blue, state.world, COLORS.blue, pulse);
+  state.challenge.assignments.forEach(item => drawZone(ctx, item.zone, state.world, item.color, pulse));
   ctx.strokeStyle = "rgba(244,239,229,0.52)";
   ctx.lineWidth = 6;
   ctx.setLineDash([24, 16]);
-  if (state.challenge.vertical) line(ctx, state.world.width / 2, 0, state.world.width / 2, state.world.height);
-  else line(ctx, 0, state.world.height / 2, state.world.width, state.world.height / 2);
+  drawSplitLine(ctx, state.challenge.split, state.world);
   ctx.setLineDash([]);
 }
 
 function drawZone(ctx, zone, world, color, alpha) {
-  const rect = zoneRect(zone, world);
   ctx.fillStyle = hexToRgba(color, alpha);
-  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  const points = zonePoints(zone, world);
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  points.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+  ctx.closePath();
+  ctx.fill();
 }
 
 function drawObstacles(ctx, obstacles, quality) {
@@ -122,11 +122,7 @@ function drawObstacles(ctx, obstacles, quality) {
     ctx.rotate(obstacle.spin);
     ctx.shadowColor = "rgba(230,223,209,0.55)";
     ctx.shadowBlur = quality ? 18 : 0;
-    ctx.strokeStyle = COLORS.danger;
-    ctx.lineWidth = 8;
-    ctx.lineCap = "round";
-    line(ctx, -obstacle.r, -obstacle.r, obstacle.r, obstacle.r);
-    line(ctx, obstacle.r, -obstacle.r, -obstacle.r, obstacle.r);
+    drawObstacleCross(ctx, obstacle.r);
     ctx.shadowBlur = 0;
     ctx.strokeStyle = "rgba(240,90,82,0.72)";
     ctx.lineWidth = 2;
@@ -137,14 +133,27 @@ function drawObstacles(ctx, obstacles, quality) {
   });
 }
 
+function drawObstacleCross(ctx, radius) {
+  const arm = radius * 1.08;
+  const thick = Math.max(7, radius * 0.36);
+  ctx.fillStyle = COLORS.danger;
+  [Math.PI / 4, -Math.PI / 4].forEach(angle => {
+    ctx.save();
+    ctx.rotate(angle);
+    roundRect(ctx, -arm, -thick / 2, arm * 2, thick, thick / 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
 function drawBand(ctx, players) {
   if (players.length < 2) return;
   const [a, b] = players;
   const strain = clamp((Math.hypot(a.x - b.x, a.y - b.y) - 190) / 200, 0, 1);
   const gradient = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-  gradient.addColorStop(0, COLORS[a.color] || COLORS.band);
+  gradient.addColorStop(0, a.color || COLORS.band);
   gradient.addColorStop(0.5, strain > 0.72 ? "#ff7a57" : COLORS.band);
-  gradient.addColorStop(1, COLORS[b.color] || COLORS.band);
+  gradient.addColorStop(1, b.color || COLORS.band);
   ctx.shadowColor = strain > 0.72 ? "rgba(255,100,80,0.62)" : "rgba(240,199,102,0.38)";
   ctx.shadowBlur = 18;
   ctx.strokeStyle = gradient;
@@ -160,9 +169,9 @@ function drawPlayers(ctx, players, playerId, quality) {
   players.forEach(player => {
     const speed = Math.hypot(player.vx || 0, player.vy || 0);
     if (quality) drawTrail(ctx, player, speed);
-    ctx.shadowColor = player.color === "red" ? COLORS.redGlow : COLORS.blueGlow;
+    ctx.shadowColor = hexToRgba(player.color, 0.42);
     ctx.shadowBlur = quality ? 26 : 0;
-    ctx.fillStyle = COLORS[player.color] || "#888";
+    ctx.fillStyle = player.color || "#888";
     ctx.strokeStyle = player.id === playerId ? "#fff" : "rgba(255,255,255,0.35)";
     ctx.lineWidth = player.id === playerId ? 6 : 3;
     ctx.beginPath();
@@ -215,7 +224,7 @@ function drawTrail(ctx, player, speed) {
   const length = clamp(speed / 7, 12, 58);
   const angle = Math.atan2(player.vy || 0, player.vx || 0);
   const gradient = ctx.createLinearGradient(player.x, player.y, player.x - Math.cos(angle) * length, player.y - Math.sin(angle) * length);
-  gradient.addColorStop(0, player.color === "red" ? "rgba(240,90,82,0.44)" : "rgba(74,168,232,0.44)");
+  gradient.addColorStop(0, hexToRgba(player.color, 0.44));
   gradient.addColorStop(1, "rgba(255,255,255,0)");
   ctx.strokeStyle = gradient;
   ctx.lineWidth = 16;
@@ -284,28 +293,6 @@ function applyScreenShake(ctx, state) {
   if (state.status !== "gameover") return;
   const shake = Math.sin(performance.now() / 24) * 3;
   ctx.translate(shake, -shake * 0.5);
-}
-
-function zoneRect(zone, world) {
-  if (zone === "left") return { x: 0, y: 0, w: world.width / 2, h: world.height };
-  if (zone === "right") return { x: world.width / 2, y: 0, w: world.width / 2, h: world.height };
-  if (zone === "top") return { x: 0, y: 0, w: world.width, h: world.height / 2 };
-  return { x: 0, y: world.height / 2, w: world.width, h: world.height / 2 };
-}
-
-function line(ctx, x1, y1, x2, y2) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-}
-
-function hexToRgba(hex, alpha) {
-  const value = Number.parseInt(hex.slice(1), 16);
-  const r = (value >> 16) & 255;
-  const g = (value >> 8) & 255;
-  const b = value & 255;
-  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function clamp(value, min, max) {

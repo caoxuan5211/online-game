@@ -1,19 +1,27 @@
-const WORLD = { width: 1280, height: 720 };
-const COLORS = ["red", "blue"];
-const PLAYER_RADIUS = 18;
-const REST_LENGTH = 190;
-const FAIL_DISTANCE = 390;
-const MAX_OBSTACLES = 42;
-const DIFFICULTIES = {
-  easy: { label: "轻松", speed: 0.82, spawnMin: 0.78, spawnMax: 1.22, warmup: 2.8 },
-  normal: { label: "标准", speed: 1, spawnMin: 0.52, spawnMax: 0.94, warmup: 2.1 },
-  hard: { label: "高压", speed: 1.18, spawnMin: 0.34, spawnMax: 0.7, warmup: 1.55 }
-};
-
+import { createChallenge, playerInZone } from "./challenge.js";
+import {
+  DIFFICULTIES,
+  FAIL_DISTANCE,
+  MAX_OBSTACLES,
+  PLAYER_RADIUS,
+  REST_LENGTH,
+  WORLD,
+  clamp,
+  collide,
+  createObstacle,
+  createPlayer,
+  inBounds,
+  limitSpeed,
+  normalizeInput,
+  pickColor,
+  publicPlayer,
+  randomBetween,
+  resetPlayer,
+  tetherDistance
+} from "./physics.js";
 export function createGameRoom(id) {
   return new GameRoom(id);
 }
-
 class GameRoom {
   constructor(id) {
     this.id = id;
@@ -25,6 +33,7 @@ class GameRoom {
     this.spawnTimer = 1;
     this.settings = { difficulty: "normal" };
     this.challenge = null;
+    this.challengeCount = 0;
     this.nextChallenge = randomBetween(5, 10);
     this.message = "等待两名玩家准备";
   }
@@ -57,6 +66,13 @@ class GameRoom {
     player.input = normalizeInput(input);
   }
 
+  setProfile(id, options) {
+    const player = this.players.get(id);
+    if (!player || this.status === "running") return;
+    player.name = options.name;
+    player.color = pickColor(options.color, this.activePlayers().filter(p => p.id !== id));
+  }
+
   setSettings(settings = {}) {
     if (!DIFFICULTIES[settings.difficulty]) return;
     if (this.status === "running") return;
@@ -71,6 +87,7 @@ class GameRoom {
     this.challenge = null;
     this.elapsed = 0;
     this.tick = 0;
+    this.challengeCount = 0;
     this.nextChallenge = randomBetween(4, 8);
     current.forEach((p, index) => this.players.set(p.id, createPlayer(p.id, p.name, p.color, index)));
   }
@@ -107,13 +124,14 @@ class GameRoom {
     this.obstacles = [];
     this.spawnTimer = DIFFICULTIES[this.settings.difficulty].warmup;
     this.challenge = null;
+    this.challengeCount = 0;
     this.nextChallenge = randomBetween(4, 8);
     this.message = "躲避障碍，等待颜色区域";
     this.activePlayers().forEach((p, index) => resetPlayer(p, index));
   }
 
   activePlayers() {
-    return [...this.players.values()].filter(p => COLORS.includes(p.color)).slice(0, 2);
+    return [...this.players.values()].slice(0, 2);
   }
 
   endGame(reason) {
@@ -128,6 +146,17 @@ class GameRoom {
     return {
       distance,
       strain: clamp((distance - REST_LENGTH) / (FAIL_DISTANCE - REST_LENGTH), 0, 1)
+    };
+  }
+
+  publicSummary() {
+    const active = this.activePlayers();
+    return {
+      id: this.id,
+      status: this.status,
+      players: active.length,
+      capacity: 2,
+      difficulty: DIFFICULTIES[this.settings.difficulty].label
     };
   }
 }
@@ -147,13 +176,13 @@ export function updateRoom(room, dt) {
 
 function updatePlayers(players, dt) {
   players.forEach(player => {
-    const accel = 1680;
+    const accel = 2600;
     player.vx += player.input.x * accel * dt;
     player.vy += player.input.y * accel * dt;
-    const damping = Math.pow(0.022, dt);
+    const damping = player.input.x || player.input.y ? Math.pow(0.035, dt) : Math.pow(0.0008, dt);
     player.vx *= damping;
     player.vy *= damping;
-    limitSpeed(player, 430);
+    limitSpeed(player, 520);
     player.x = clamp(player.x + player.vx * dt, PLAYER_RADIUS, WORLD.width - PLAYER_RADIUS);
     player.y = clamp(player.y + player.vy * dt, PLAYER_RADIUS, WORLD.height - PLAYER_RADIUS);
   });
@@ -197,12 +226,17 @@ function updateChallenge(room, dt) {
     return;
   }
   room.nextChallenge -= dt;
-  if (room.nextChallenge <= 0) room.challenge = createChallenge();
+  if (room.nextChallenge <= 0) {
+    room.challengeCount += 1;
+    room.challenge = createChallenge(room.activePlayers(), room.challengeCount);
+  }
 }
 
 function finishChallenge(room) {
-  const players = room.activePlayers();
-  const failed = players.find(p => !playerInZone(p, room.challenge.zones[p.color]));
+  const failed = room.activePlayers().find(p => {
+    const assignment = room.challenge.assignments.find(item => item.playerId === p.id);
+    return assignment && !playerInZone(p, assignment.zone);
+  });
   if (failed) room.endGame(`${failed.name} 没有及时进入颜色区域`);
   room.challenge = null;
   room.nextChallenge = randomBetween(6, 12);
@@ -212,123 +246,4 @@ function checkFailures(room, players) {
   if (tetherDistance(players) > FAIL_DISTANCE) room.endGame("弹力带被拉断");
   const hit = players.find(player => room.obstacles.some(o => collide(player, o)));
   if (hit) room.endGame(`${hit.name} 撞上了障碍物`);
-}
-
-function createPlayer(id, name, color, index) {
-  const player = { id, name, color, ready: false, health: 1, maxHealth: 1, input: { x: 0, y: 0 } };
-  return resetPlayer(player, index);
-}
-
-function resetPlayer(player, index) {
-  player.x = index === 0 ? WORLD.width * 0.42 : WORLD.width * 0.58;
-  player.y = WORLD.height * 0.52;
-  player.vx = 0;
-  player.vy = 0;
-  player.ready = false;
-  return player;
-}
-
-function pickColor(requested, players) {
-  const used = new Set(players.map(p => p.color));
-  if (!used.has(requested)) return requested;
-  return COLORS.find(color => !used.has(color)) || "spectator";
-}
-
-function normalizeInput(input) {
-  const x = clamp(Number(input.x) || 0, -1, 1);
-  const y = clamp(Number(input.y) || 0, -1, 1);
-  const length = Math.hypot(x, y);
-  return length > 1 ? { x: x / length, y: y / length } : { x, y };
-}
-
-function createObstacle(time, difficulty) {
-  const edge = Math.floor(Math.random() * 4);
-  const speed = (randomBetween(205, 335) + Math.min(time * 3.6, 150)) * difficulty.speed;
-  const target = { x: randomBetween(280, 1000), y: randomBetween(160, 560) };
-  const start = obstacleStart(edge);
-  const angle = Math.atan2(target.y - start.y, target.x - start.x);
-  return {
-    id: `${Date.now()}-${Math.random()}`,
-    x: start.x,
-    y: start.y,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    r: randomBetween(16, 26),
-    spin: 0,
-    spinSpeed: randomBetween(-5, 5),
-    edge
-  };
-}
-
-function obstacleStart(edge) {
-  if (edge === 0) return { x: randomBetween(0, WORLD.width), y: -40 };
-  if (edge === 1) return { x: WORLD.width + 40, y: randomBetween(0, WORLD.height) };
-  if (edge === 2) return { x: randomBetween(0, WORLD.width), y: WORLD.height + 40 };
-  return { x: -40, y: randomBetween(0, WORLD.height) };
-}
-
-function createChallenge() {
-  const vertical = Math.random() > 0.5;
-  const redFirst = Math.random() > 0.5;
-  return {
-    duration: 4.5,
-    remaining: 4.5,
-    vertical,
-    zones: makeZones(vertical, redFirst)
-  };
-}
-
-function makeZones(vertical, redFirst) {
-  const first = vertical ? "left" : "top";
-  const second = vertical ? "right" : "bottom";
-  return redFirst ? { red: first, blue: second } : { red: second, blue: first };
-}
-
-function playerInZone(player, zone) {
-  if (zone === "left") return player.x < WORLD.width / 2;
-  if (zone === "right") return player.x >= WORLD.width / 2;
-  if (zone === "top") return player.y < WORLD.height / 2;
-  return player.y >= WORLD.height / 2;
-}
-
-function publicPlayer(player) {
-  return {
-    id: player.id,
-    name: player.name,
-    color: player.color,
-    ready: player.ready,
-    x: player.x,
-    y: player.y,
-    vx: player.vx,
-    vy: player.vy,
-    health: player.health,
-    maxHealth: player.maxHealth
-  };
-}
-
-function collide(player, obstacle) {
-  return Math.hypot(player.x - obstacle.x, player.y - obstacle.y) < PLAYER_RADIUS + obstacle.r * 0.72;
-}
-
-function tetherDistance(players) {
-  return Math.hypot(players[0].x - players[1].x, players[0].y - players[1].y);
-}
-
-function inBounds(o) {
-  return o.x > -120 && o.x < WORLD.width + 120 && o.y > -120 && o.y < WORLD.height + 120;
-}
-
-function limitSpeed(player, max) {
-  const speed = Math.hypot(player.vx, player.vy);
-  if (speed <= max) return;
-  player.vx = (player.vx / speed) * max;
-  player.vy = (player.vy / speed) * max;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function randomBetween(min, max) {
-  return min + Math.random() * (max - min);
 }
