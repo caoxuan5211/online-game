@@ -74,6 +74,7 @@ function getNodes() {
     shakeToggle: document.querySelector("#shakeToggle"),
     nameInput: document.querySelector("#nameInput"),
     saveProfileButton: document.querySelector("#saveProfileButton"),
+    customColorInput: document.querySelector("#customColorInput"),
     readyButton: document.querySelector("#readyButton"),
     restartButton: document.querySelector("#restartButton"),
     colorButtons: [...document.querySelectorAll("[data-player-color]")]
@@ -92,9 +93,15 @@ function bindProfile(nodes, getColor, setColor, onProfile) {
   nodes.colorButtons.forEach(button => {
     button.addEventListener("click", () => {
       setColor(button.dataset.playerColor);
+      nodes.customColorInput.value = button.dataset.playerColor;
       nodes.colorButtons.forEach(item => item.classList.toggle("active", item === button));
       if (!nodes.lobbyPanel.classList.contains("hidden")) sendProfile(nodes, getColor(), onProfile);
     });
+  });
+  nodes.customColorInput.addEventListener("input", () => {
+    setColor(nodes.customColorInput.value);
+    nodes.colorButtons.forEach(item => item.classList.remove("active"));
+    if (!nodes.lobbyPanel.classList.contains("hidden")) sendProfile(nodes, getColor(), onProfile);
   });
   nodes.saveProfileButton.addEventListener("click", () => sendProfile(nodes, getColor(), onProfile));
 }

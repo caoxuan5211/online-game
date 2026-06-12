@@ -172,6 +172,11 @@ input, select {
   border: 3px solid rgba(255,255,255,0.9); box-shadow: 0 8px 18px rgba(49,91,220,0.18);
 }
 .color-swatches button.active { outline: 3px solid var(--primary-deep); outline-offset: 3px; }
+.color-swatches input[type="color"] {
+  width: 48px; min-height: 42px; height: 42px; margin: 0; padding: 3px;
+  border-radius: 50%; border: 3px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.74);
+  box-shadow: 0 8px 18px rgba(49,91,220,0.18);
+}
 .lobby-player {
   min-height: 54px; display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,0.64); color: var(--ink);
@@ -187,8 +192,7 @@ input, select {
 .segmented button:hover, .join-button:hover, .ready-button:hover, .game-controls button:hover {
   transform: translateY(-1px); background: rgba(255,255,255,0.92);
 }
-.segmented .active[data-color="red"] { background: rgba(255,226,230,0.9); color: #c9435f; }
-.segmented .active[data-color="blue"], .join-button, .ready-button {
+.join-button, .ready-button {
   background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(226,236,255,0.86));
   color: var(--primary-deep);
 }
