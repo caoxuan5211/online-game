@@ -6,7 +6,7 @@ const DEFAULTS = {
   showJoystick: true,
   sound: true,
   music: true,
-  volume: 70
+  volume: 85
 };
 
 export function createSettings() {

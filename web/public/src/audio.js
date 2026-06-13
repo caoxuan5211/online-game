@@ -39,7 +39,8 @@ function unlock(state) {
 function applyVolume(state) {
   if (!state.master) return;
   const value = Math.max(0, Math.min(100, Number(state.prefs.volume) || 0));
-  state.master.gain.value = 0.18 * (value / 100);
+  const mix = value / 100;
+  state.master.gain.value = 0.02 + 0.58 * mix * mix;
 }
 
 function startMusic(state) {
