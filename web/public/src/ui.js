@@ -45,6 +45,12 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
     ready = false;
     onRestart();
   }));
+  nodes.resultModeButton.addEventListener("click", () => {
+    ready = false;
+    nodes.resultPanel.classList.add("hidden");
+    showMode(nodes, "menu");
+    showOnly(nodes, "mode");
+  });
 
   return {
     setStatus(text) {
@@ -134,6 +140,7 @@ function getNodes() {
     resultStats: document.querySelector("#resultStats"),
     resultRestartButton: document.querySelector("#resultRestartButton"),
     resultLobbyButton: document.querySelector("#resultLobbyButton"),
+    resultModeButton: document.querySelector("#resultModeButton"),
     countdownOverlay: document.querySelector("#countdownOverlay"),
     countdownNumber: document.querySelector("#countdownNumber"),
     profileName: document.querySelector("#profileName"),
