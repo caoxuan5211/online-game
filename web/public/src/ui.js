@@ -6,6 +6,11 @@ const games = [{
   supportedModes: ["单人", "双人", "多人", "协作"],
   description: "保持弹性连接，避开障碍，进入目标区域。"
 }];
+const roomSizes = [
+  { value: 2, title: "2 人协作", short: "2 人" },
+  { value: 3, title: "3 人三角协作", short: "3 人" },
+  { value: 4, title: "4 人方阵协作", short: "4 人" }
+];
 
 export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady, onRestart, onSettings }) {
   const nodes = getNodes();
@@ -14,6 +19,7 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
   let joinPending = false;
   let joinTimer = null;
   bindShell(nodes);
+  renderRoomSizeOptions(nodes);
   bindSettings(nodes, settings.values, onSettings);
   bindProfile(nodes, () => selectedColor, value => { selectedColor = value; }, onProfile);
   renderGames(nodes, () => showOnly(nodes, "mode"));
@@ -26,12 +32,7 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
     showOnly(nodes, "none");
     onSolo({ name: nodes.nameInput.value, color: selectedColor });
   });
-  nodes.multiModeButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      nodes.roomSizeSelect.value = button.dataset.roomSize;
-      showOnly(nodes, "join");
-    });
-  });
+  nodes.multiModeButton.addEventListener("click", () => showOnly(nodes, "join"));
   nodes.readyButton.addEventListener("click", () => {
     ready = !ready;
     nodes.readyButton.textContent = ready ? "取消准备" : "准备";
@@ -123,7 +124,7 @@ function getNodes() {
     closeModeSelectButton: document.querySelector("#closeModeSelectButton"),
     createRoomButton: document.querySelector("#createRoomButton"),
     soloModeButton: document.querySelector("#soloModeButton"),
-    multiModeButtons: [...document.querySelectorAll("[data-room-size]")],
+    multiModeButton: document.querySelector("#multiModeButton"),
     roomSizeSelect: document.querySelector("#roomSizeSelect"),
     backHomeButton: document.querySelector("#backHomeButton"),
     backGameButton: document.querySelector("#backGameButton"),
@@ -282,6 +283,13 @@ function renderGames(nodes, onSelect) {
     button.addEventListener("click", onSelect);
     nodes.gameList.appendChild(button);
   });
+}
+
+function renderRoomSizeOptions(nodes) {
+  const roomOptions = roomSizes.map(size => `<option value="${size.value}">${size.title}</option>`).join("");
+  const settingsOptions = roomSizes.map(size => `<option value="${size.value}">${size.short}</option>`).join("");
+  nodes.roomSizeSelect.innerHTML = roomOptions;
+  nodes.maxPlayersSelect.innerHTML = settingsOptions;
 }
 
 function syncRoomSettings(nodes, settings, state, playerId) {
