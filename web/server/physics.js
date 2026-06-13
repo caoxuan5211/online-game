@@ -8,18 +8,13 @@ export const DIFFICULTY_MAX = 10;
 
 const DEFAULT_COLORS = ["#4f68ff", "#f05a52", "#36c6a7", "#f0c766", "#c56bff", "#ff8a4f"];
 
-export function createPlayer(id, name, color, index) {
+export function createPlayer(id, name, color, index, total = 2) {
   const player = { id, name, color, ready: false, health: 1, maxHealth: 1, input: { x: 0, y: 0 } };
-  return resetPlayer(player, index);
+  return resetPlayer(player, index, total);
 }
 
-export function resetPlayer(player, index) {
-  const positions = [
-    [0.42, 0.52],
-    [0.58, 0.52],
-    [0.5, 0.4],
-    [0.5, 0.64]
-  ];
+export function resetPlayer(player, index, total = 2) {
+  const positions = formationPositions(total);
   const [x, y] = positions[index] || [0.5, 0.52];
   player.x = WORLD.width * x;
   player.y = WORLD.height * y;
@@ -27,6 +22,13 @@ export function resetPlayer(player, index) {
   player.vy = 0;
   player.ready = false;
   return player;
+}
+
+function formationPositions(total) {
+  if (total === 1) return [[0.5, 0.52]];
+  if (total === 2) return [[0.42, 0.52], [0.58, 0.52]];
+  if (total === 3) return [[0.5, 0.38], [0.59, 0.6], [0.41, 0.6]];
+  return [[0.43, 0.39], [0.57, 0.39], [0.57, 0.64], [0.43, 0.64]];
 }
 
 export function pickColor(requested, players) {

@@ -44,7 +44,7 @@ class GameRoom {
     const active = this.activePlayers();
     const color = pickColor(options.color, active);
     const name = defaultName(options.name, active.length);
-    this.players.set(id, createPlayer(id, name, color, active.length));
+    this.players.set(id, createPlayer(id, name, color, active.length, this.settings.maxPlayers));
     this.status = this.status === "gameover" ? "waiting" : this.status;
     if (this.status === "waiting") this.message = this.waitingMessage();
   }
@@ -100,7 +100,7 @@ class GameRoom {
     this.resetRound();
     this.status = "waiting";
     this.message = this.isSolo() ? "单人挑战准备" : "等待玩家准备";
-    current.forEach((p, index) => this.players.set(p.id, createPlayer(p.id, p.name, p.color, index)));
+    current.forEach((p, index) => this.players.set(p.id, createPlayer(p.id, p.name, p.color, index, current.length)));
     if (this.isSolo()) {
       this.activePlayers().forEach(player => { player.ready = true; });
       this.start();
@@ -159,7 +159,8 @@ class GameRoom {
     this.status = "running";
     this.spawnTimer = this.difficulty().warmup;
     this.message = this.isSolo() ? "进入目标区域，避开障碍" : "保持队形，避开障碍";
-    this.activePlayers().forEach((p, index) => resetPlayer(p, index));
+    const players = this.activePlayers();
+    players.forEach((p, index) => resetPlayer(p, index, players.length));
     if (this.isSolo()) this.target = createTarget(this.activePlayers()[0], this.obstacles, this.difficulty());
   }
 
