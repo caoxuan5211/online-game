@@ -7,22 +7,22 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="./assets/background.png" as="image" />
     <link rel="preload" href="/socket.io/socket.io.js" as="script" />
-    <link rel="modulepreload" href="./src/main.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/input.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/prediction.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/smoothing.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/render.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/render-cache.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/render-quality.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/render-utils.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/settings.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/ui.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/audio.js?v=20260613-smooth11" />
-    <link rel="modulepreload" href="./src/preload.js?v=20260613-smooth11" />
+    <link rel="modulepreload" href="./src/main.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/input.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/prediction.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/smoothing.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/render.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/render-cache.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/render-quality.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/render-utils.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/settings.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/ui.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/audio.js?v=20260613-smooth12" />
+    <link rel="modulepreload" href="./src/preload.js?v=20260613-smooth12" />
     <title>Elastic Duo</title>
-    <link rel="stylesheet" href="./styles.css?v=20260613-smooth11" />
-    <link rel="stylesheet" href="./loader.css?v=20260613-smooth11" />
-    <link rel="stylesheet" href="./feedback.css?v=20260613-smooth11" />
+    <link rel="stylesheet" href="./styles.css?v=20260613-smooth12" />
+    <link rel="stylesheet" href="./loader.css?v=20260613-smooth12" />
+    <link rel="stylesheet" href="./feedback.css?v=20260613-smooth12" />
   </head>
   <body>
     <section id="loaderPanel" class="loader-panel" aria-live="polite">
@@ -83,8 +83,14 @@
           <button id="soloModeButton" class="mode-card">
             <strong>单人挑战</strong><span>进入圆形目标区，刷新分数</span>
           </button>
-          <button id="multiModeButton" class="mode-card">
-            <strong>多人协作</strong><span>2-4 人弹性连接，协作避障</span>
+          <button id="multiModeButton" class="mode-card" data-room-size="2">
+            <strong>双人协作</strong><span>一条弹性连接线，保持距离避障</span>
+          </button>
+          <button class="mode-card" data-room-size="3">
+            <strong>3 人三角协作</strong><span>三名玩家形成三角连接结构</span>
+          </button>
+          <button class="mode-card" data-room-size="4">
+            <strong>4 人方阵协作</strong><span>四名玩家形成四边形连接结构</span>
           </button>
         </div>
       </section>
@@ -196,8 +202,8 @@
         <label class="toggle-row"><input id="shakeToggle" type="checkbox" />屏幕震动</label>
         <label class="toggle-row"><input id="soundToggle" type="checkbox" />交互音效</label>
         <label class="toggle-row"><input id="musicToggle" type="checkbox" />背景音乐</label>
-        <label>音量 <span id="volumeValue" class="range-value">85</span>
-          <input id="volumeSelect" type="range" min="0" max="100" step="1" value="85" />
+        <label>音量 <span id="volumeValue" class="range-value">90</span>
+          <input id="volumeSelect" type="range" min="0" max="100" step="1" value="90" />
         </label>
       </aside>
 
@@ -211,7 +217,7 @@
     </main>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="./config.js?v=20260613-smooth11"></script>
-    <script type="module" src="./src/main.js?v=20260613-smooth11"></script>
+    <script src="./config.js?v=20260613-smooth12"></script>
+    <script type="module" src="./src/main.js?v=20260613-smooth12"></script>
   </body>
 </html>

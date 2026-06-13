@@ -26,7 +26,12 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
     showOnly(nodes, "none");
     onSolo({ name: nodes.nameInput.value, color: selectedColor });
   });
-  nodes.multiModeButton.addEventListener("click", () => showOnly(nodes, "join"));
+  nodes.multiModeButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      nodes.roomSizeSelect.value = button.dataset.roomSize;
+      showOnly(nodes, "join");
+    });
+  });
   nodes.readyButton.addEventListener("click", () => {
     ready = !ready;
     nodes.readyButton.textContent = ready ? "取消准备" : "准备";
@@ -112,7 +117,7 @@ function getNodes() {
     closeModeSelectButton: document.querySelector("#closeModeSelectButton"),
     createRoomButton: document.querySelector("#createRoomButton"),
     soloModeButton: document.querySelector("#soloModeButton"),
-    multiModeButton: document.querySelector("#multiModeButton"),
+    multiModeButtons: [...document.querySelectorAll("[data-room-size]")],
     roomSizeSelect: document.querySelector("#roomSizeSelect"),
     backHomeButton: document.querySelector("#backHomeButton"),
     backGameButton: document.querySelector("#backGameButton"),
@@ -265,7 +270,7 @@ function renderGames(nodes, onSelect) {
     button.className = "game-card";
     button.innerHTML = `
       <span class="game-cover" style="background-image:url('${game.cover}')"></span>
-      <span><strong>${game.title}</strong><span>${game.description}</span><span class="game-tags">${game.supportedModes.map(tag => `<small>${tag}</small>`).join("")}</span></span>
+      <span><strong>${game.title}</strong><span>${game.description}</span><span class="game-tags">${game.supportedModes.map(tag => `<small>${tag}</small>`).join("")}</span><em class="game-action">选择游戏</em></span>
     `;
     button.addEventListener("click", onSelect);
     nodes.gameList.appendChild(button);
