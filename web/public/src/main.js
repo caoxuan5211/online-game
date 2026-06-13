@@ -1,11 +1,11 @@
-import { drawGame } from "./render.js?v=20260613-smooth8";
-import { createInput } from "./input.js?v=20260613-smooth8";
-import { predictLocalState } from "./prediction.js?v=20260613-smooth8";
-import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth8";
-import { createSettings } from "./settings.js?v=20260613-smooth8";
-import { createStateBuffer } from "./smoothing.js?v=20260613-smooth8";
-import { setupUi } from "./ui.js?v=20260613-smooth8";
-import { createAudio } from "./audio.js?v=20260613-smooth8";
+import { drawGame } from "./render.js?v=20260613-smooth9";
+import { createInput } from "./input.js?v=20260613-smooth9";
+import { predictLocalState } from "./prediction.js?v=20260613-smooth9";
+import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth9";
+import { createSettings } from "./settings.js?v=20260613-smooth9";
+import { createStateBuffer } from "./smoothing.js?v=20260613-smooth9";
+import { setupUi } from "./ui.js?v=20260613-smooth9";
+import { createAudio } from "./audio.js?v=20260613-smooth9";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");

@@ -119,6 +119,8 @@ function getNodes() {
     shakeToggle: document.querySelector("#shakeToggle"),
     soundToggle: document.querySelector("#soundToggle"),
     musicToggle: document.querySelector("#musicToggle"),
+    volumeSelect: document.querySelector("#volumeSelect"),
+    volumeValue: document.querySelector("#volumeValue"),
     nameInput: document.querySelector("#nameInput"),
     saveProfileButton: document.querySelector("#saveProfileButton"),
     copyRoomButton: document.querySelector("#copyRoomButton"),
@@ -172,8 +174,12 @@ function bindSettings(nodes, values, onSettings) {
   nodes.settingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
   nodes.menuSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
   nodes.closeSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.remove("open"));
-  [nodes.difficultySelect, nodes.qualitySelect, nodes.backgroundToggle, nodes.shakeToggle, nodes.soundToggle, nodes.musicToggle].forEach(node => {
+  [nodes.difficultySelect, nodes.qualitySelect, nodes.backgroundToggle, nodes.shakeToggle, nodes.soundToggle, nodes.musicToggle, nodes.volumeSelect].forEach(node => {
     node.addEventListener("change", () => onSettings(readSettings(nodes)));
+  });
+  nodes.volumeSelect.addEventListener("input", () => {
+    setText(nodes.volumeValue, nodes.volumeSelect.value);
+    onSettings(readSettings(nodes));
   });
 }
 
@@ -305,6 +311,8 @@ function syncSettingsControls(nodes, values) {
   nodes.shakeToggle.checked = values.screenShake;
   nodes.soundToggle.checked = values.sound;
   nodes.musicToggle.checked = values.music;
+  nodes.volumeSelect.value = values.volume;
+  setText(nodes.volumeValue, String(values.volume));
 }
 
 function readSettings(nodes) {
@@ -314,7 +322,8 @@ function readSettings(nodes) {
     showBackground: nodes.backgroundToggle.checked,
     screenShake: nodes.shakeToggle.checked,
     sound: nodes.soundToggle.checked,
-    music: nodes.musicToggle.checked
+    music: nodes.musicToggle.checked,
+    volume: Number(nodes.volumeSelect.value)
   };
 }
 

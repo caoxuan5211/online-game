@@ -9,6 +9,7 @@ export function createAudio(prefs = {}) {
   return {
     update(next) {
       state.prefs = { ...state.prefs, ...next };
+      applyVolume(state);
       if (!state.prefs.music) stopMusic(state);
       else if (state.ctx) startMusic(state);
     },
@@ -26,13 +27,19 @@ function unlock(state) {
   if (!AudioContext) return;
   state.ctx = state.ctx || new AudioContext();
   state.master = state.master || state.ctx.createGain();
-  state.master.gain.value = 0.18;
+  applyVolume(state);
   if (!state.connected) {
     state.master.connect(state.ctx.destination);
     state.connected = true;
   }
   state.ctx.resume?.();
   startMusic(state);
+}
+
+function applyVolume(state) {
+  if (!state.master) return;
+  const value = Math.max(0, Math.min(100, Number(state.prefs.volume) || 0));
+  state.master.gain.value = 0.18 * (value / 100);
 }
 
 function startMusic(state) {

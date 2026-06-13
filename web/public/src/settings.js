@@ -5,7 +5,8 @@ const DEFAULTS = {
   showBackground: true,
   showJoystick: true,
   sound: true,
-  music: true
+  music: true,
+  volume: 70
 };
 
 export function createSettings() {
@@ -38,7 +39,8 @@ function sanitize(value = {}) {
     showBackground: value.showBackground !== false,
     showJoystick: value.showJoystick !== false,
     sound: value.sound !== false,
-    music: value.music !== false
+    music: value.music !== false,
+    volume: sanitizeVolume(value.volume)
   };
 }
 
@@ -46,6 +48,12 @@ function sanitizeDifficulty(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return DEFAULTS.difficulty;
   return Math.round(Math.max(1, Math.min(10, number)));
+}
+
+function sanitizeVolume(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULTS.volume;
+  return Math.round(Math.max(0, Math.min(100, number)));
 }
 
 function applyDom(values) {
