@@ -1,6 +1,6 @@
-import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-smooth14";
-import { drawStaticScene } from "./render-cache.js?v=20260613-smooth14";
-import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-smooth14";
+import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-smooth15";
+import { drawStaticScene } from "./render-cache.js?v=20260613-smooth15";
+import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-smooth15";
 
 const COLORS = {
   band: "#f0c766",
@@ -48,17 +48,29 @@ function drawChallenge(ctx, state, profile) {
 function drawTarget(ctx, target, profile) {
   if (!target) return;
   const progress = target.remaining / target.duration;
-  const pulse = 0.72 + Math.sin(performance.now() / (profile.full ? 120 : 170)) * 0.08;
+  const urgency = 1 - progress;
+  const pulse = 0.98 + Math.sin(performance.now() / (profile.full ? 42 : 70)) * 0.045 + urgency * 0.035;
+  const color = target.color || "#36c6a7";
   ctx.save();
   ctx.translate(target.x, target.y);
-  ctx.fillStyle = `rgba(54,198,167,${0.2 + progress * 0.12})`;
-  ctx.strokeStyle = progress < 0.3 ? "rgba(255,116,95,0.92)" : "rgba(130,255,216,0.86)";
-  ctx.lineWidth = 5;
-  ctx.shadowColor = "rgba(54,198,167,0.5)";
-  ctx.shadowBlur = profile.full ? 18 : 0;
+  ctx.shadowColor = hexToRgba(color, 0.42);
+  ctx.shadowBlur = profile.full ? 22 : 0;
+  ctx.fillStyle = hexToRgba(color, 0.12 + progress * 0.16);
   ctx.beginPath();
   ctx.arc(0, 0, target.r * pulse, 0, Math.PI * 2);
   ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = progress < 0.28 ? "rgba(255,116,95,0.92)" : "rgba(244,239,229,0.72)";
+  ctx.lineWidth = progress < 0.28 ? 8 : 6;
+  ctx.setLineDash([18, 10]);
+  ctx.beginPath();
+  ctx.arc(0, 0, target.r * (1.04 + urgency * 0.03), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = hexToRgba(color, 0.9);
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(0, 0, target.r * 0.78, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
   ctx.stroke();
   ctx.restore();
 }

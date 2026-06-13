@@ -46,12 +46,13 @@ class GameRoom {
     const name = defaultName(options.name, active.length);
     this.players.set(id, createPlayer(id, name, color, active.length));
     this.status = this.status === "gameover" ? "waiting" : this.status;
+    if (this.status === "waiting") this.message = this.waitingMessage();
   }
 
   removePlayer(id) {
     this.players.delete(id);
     if (this.status === "countdown") this.cancelCountdown();
-    if (this.status === "running" && this.activePlayers().length < this.minPlayers()) this.endGame("玩家断开连接");
+    if (this.status === "running" && this.activePlayers().length < this.requiredPlayers()) this.endGame("玩家断开连接");
   }
 
   setReady(id, ready) {
@@ -61,6 +62,7 @@ class GameRoom {
     if (this.status === "countdown" && !ready) this.cancelCountdown();
     player.ready = ready;
     if (this.canStart()) this.beginCountdown();
+    else if (this.status === "waiting") this.message = this.waitingMessage();
     return { ok: true };
   }
 
@@ -88,6 +90,7 @@ class GameRoom {
     if (this.players.size > nextMax) return { ok: false, message: "当前人数超过房间人数上限" };
     this.applySettings(settings);
     this.nextChallenge = nextChallengeDelay(this.difficulty(), "first");
+    this.message = this.waitingMessage();
     return { ok: true };
   }
 
@@ -131,12 +134,12 @@ class GameRoom {
 
   canStart() {
     const active = this.activePlayers();
-    return active.length >= this.minPlayers() && uniqueColors(active) && active.every(p => p.ready) && this.status === "waiting";
+    return active.length >= this.requiredPlayers() && uniqueColors(active) && active.every(p => p.ready) && this.status === "waiting";
   }
 
   canContinueCountdown() {
     const active = this.activePlayers();
-    return active.length >= this.minPlayers() && uniqueColors(active) && active.every(p => p.ready);
+    return active.length >= this.requiredPlayers() && uniqueColors(active) && active.every(p => p.ready);
   }
 
   beginCountdown() {
@@ -214,7 +217,14 @@ class GameRoom {
   difficulty() { return resolveDifficulty(this.settings.difficulty); }
   isHost(id) { return this.activePlayers()[0]?.id === id; }
   isSolo() { return this.settings.mode === "solo"; }
-  minPlayers() { return this.isSolo() ? 1 : 2; }
+  requiredPlayers() { return this.isSolo() ? 1 : this.settings.maxPlayers; }
+  waitingMessage() {
+    if (this.isSolo()) return "单人挑战准备";
+    const active = this.activePlayers();
+    if (active.length < this.settings.maxPlayers) return `等待玩家加入 ${active.length}/${this.settings.maxPlayers}`;
+    if (!uniqueColors(active)) return "等待玩家调整颜色";
+    return "等待所有玩家准备";
+  }
 
   applySettings(settings = {}) {
     this.settings.difficulty = normalizeDifficulty(settings.difficulty ?? this.settings.difficulty);
@@ -241,7 +251,7 @@ export function updateRoom(room, dt) {
   if (updateCountdown(room, dt)) return;
   if (room.status !== "running") return;
   const players = room.activePlayers();
-  if (players.length < room.minPlayers()) return;
+  if (players.length < room.requiredPlayers()) return;
   room.tick += 1;
   room.elapsed += dt;
   updatePlayers(players, dt);
@@ -346,12 +356,13 @@ function createTarget(player, obstacles, difficulty) {
       x: randomBetween(120, WORLD.width - 120),
       y: randomBetween(110, WORLD.height - 110),
       r: radius,
+      color: player.color,
       duration,
       remaining: duration
     };
     if (validTarget(target, player, obstacles)) return target;
   }
-  return { x: WORLD.width * 0.5, y: WORLD.height * 0.34, r: radius, duration, remaining: duration };
+  return { x: WORLD.width * 0.5, y: WORLD.height * 0.34, r: radius, color: player.color, duration, remaining: duration };
 }
 
 function validTarget(target, player, obstacles) {
