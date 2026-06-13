@@ -343,7 +343,8 @@ function updateResultPanel(nodes, state) {
   if (!result) return;
   setText(nodes.resultReason, result.reason);
   const score = Number.isFinite(result.score) ? ` · 分数 ${result.score}` : "";
-  setText(nodes.resultStats, `${result.elapsed}s · ${result.difficulty}${score}`);
+  const mode = result.mode ? `${result.mode} · ` : "";
+  setText(nodes.resultStats, `${mode}${result.elapsed}s · ${result.difficulty}${score}`);
 }
 
 function showProfileError(nodes, message) {
