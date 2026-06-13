@@ -1,5 +1,6 @@
 const DEFAULTS = {
   difficulty: 5,
+  maxPlayers: 2,
   quality: "high",
   screenShake: true,
   showBackground: true,
@@ -34,6 +35,7 @@ function readStored() {
 function sanitize(value = {}) {
   return {
     difficulty: sanitizeDifficulty(value.difficulty),
+    maxPlayers: sanitizeMaxPlayers(value.maxPlayers),
     quality: value.quality === "low" ? "low" : DEFAULTS.quality,
     screenShake: value.screenShake !== false,
     showBackground: value.showBackground !== false,
@@ -48,6 +50,12 @@ function sanitizeDifficulty(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return DEFAULTS.difficulty;
   return Math.round(Math.max(1, Math.min(10, number)));
+}
+
+function sanitizeMaxPlayers(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULTS.maxPlayers;
+  return Math.round(Math.max(2, Math.min(4, number)));
 }
 
 function sanitizeVolume(value) {

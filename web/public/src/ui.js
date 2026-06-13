@@ -1,4 +1,13 @@
-export function setupUi({ session, settings, onJoin, onProfile, onReady, onRestart, onSettings }) {
+const games = [{
+  id: "elastic-duo",
+  title: "Elastic Duo",
+  subtitle: "弹性之间，连接彼此",
+  cover: "./assets/background.png",
+  supportedModes: ["单人", "双人", "多人", "协作"],
+  description: "保持弹性连接，避开障碍，进入目标区域。"
+}];
+
+export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady, onRestart, onSettings }) {
   const nodes = getNodes();
   let selectedColor = "#4f68ff";
   let ready = false;
@@ -7,8 +16,17 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
   bindShell(nodes);
   bindSettings(nodes, settings.values, onSettings);
   bindProfile(nodes, () => selectedColor, value => { selectedColor = value; }, onProfile);
+  renderGames(nodes, () => showOnly(nodes, "mode"));
 
-  nodes.createRoomButton.addEventListener("click", () => join(randomRoomId()));
+  nodes.createRoomButton.addEventListener("click", () => join(randomRoomId(), {
+    mode: "multi",
+    maxPlayers: Number(nodes.roomSizeSelect.value)
+  }));
+  nodes.soloModeButton.addEventListener("click", () => {
+    showOnly(nodes, "none");
+    onSolo({ name: nodes.nameInput.value, color: selectedColor });
+  });
+  nodes.multiModeButton.addEventListener("click", () => showOnly(nodes, "join"));
   nodes.readyButton.addEventListener("click", () => {
     ready = !ready;
     nodes.readyButton.textContent = ready ? "取消准备" : "准备";
@@ -44,7 +62,7 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
         if (!nodes.nameInput.value || nodes.nameInput.value === "Player") nodes.nameInput.value = me.name;
         syncSelectedColor(nodes, me.color);
       }
-      syncDifficulty(nodes, settings, state, session.playerId);
+      syncRoomSettings(nodes, settings, state, session.playerId);
       updateStateText(nodes, state, session.playerId);
       updateLobby(nodes, state, session.playerId);
       ready = updateReadyButton(nodes, state, session.playerId, ready);
@@ -63,7 +81,7 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
     }
   };
 
-  function join(roomId) {
+  function join(roomId, options = {}) {
     if (joinPending) return;
     joinPending = true;
     nodes.createRoomButton.disabled = true;
@@ -73,7 +91,7 @@ export function setupUi({ session, settings, onJoin, onProfile, onReady, onResta
       nodes.createRoomButton.disabled = false;
       nodes.joinError.textContent = "进入房间超时，请重试";
     }, 5000);
-    onJoin({ name: nodes.nameInput.value, roomId, color: selectedColor });
+    onJoin({ name: nodes.nameInput.value, roomId, color: selectedColor, ...options });
   }
 }
 
@@ -81,13 +99,21 @@ function getNodes() {
   return {
     appRoot: document.querySelector("#appRoot"),
     heroPanel: document.querySelector("#heroPanel"),
+    gameSelectPanel: document.querySelector("#gameSelectPanel"),
+    modeSelectPanel: document.querySelector("#modeSelectPanel"),
+    gameList: document.querySelector("#gameList"),
     joinPanel: document.querySelector("#joinPanel"),
     lobbyPanel: document.querySelector("#lobbyPanel"),
     roomList: document.querySelector("#roomList"),
     joinError: document.querySelector("#joinError"),
     startButton: document.querySelector("#startButton"),
     closeJoinButton: document.querySelector("#closeJoinButton"),
+    closeGameSelectButton: document.querySelector("#closeGameSelectButton"),
+    closeModeSelectButton: document.querySelector("#closeModeSelectButton"),
     createRoomButton: document.querySelector("#createRoomButton"),
+    soloModeButton: document.querySelector("#soloModeButton"),
+    multiModeButton: document.querySelector("#multiModeButton"),
+    roomSizeSelect: document.querySelector("#roomSizeSelect"),
     backHomeButton: document.querySelector("#backHomeButton"),
     backGameButton: document.querySelector("#backGameButton"),
     menuSettingsButton: document.querySelector("#menuSettingsButton"),
@@ -114,6 +140,7 @@ function getNodes() {
     difficultySelect: document.querySelector("#difficultySelect"),
     difficultyValue: document.querySelector("#difficultyValue"),
     difficultyHint: document.querySelector("#difficultyHint"),
+    maxPlayersSelect: document.querySelector("#maxPlayersSelect"),
     qualitySelect: document.querySelector("#qualitySelect"),
     backgroundToggle: document.querySelector("#backgroundToggle"),
     shakeToggle: document.querySelector("#shakeToggle"),
@@ -133,8 +160,10 @@ function getNodes() {
 }
 
 function bindShell(nodes) {
-  nodes.startButton.addEventListener("click", () => nodes.joinPanel.classList.remove("hidden"));
-  nodes.closeJoinButton.addEventListener("click", () => nodes.joinPanel.classList.add("hidden"));
+  nodes.startButton.addEventListener("click", () => showOnly(nodes, "game"));
+  nodes.closeGameSelectButton.addEventListener("click", () => showOnly(nodes, "none"));
+  nodes.closeModeSelectButton.addEventListener("click", () => showOnly(nodes, "game"));
+  nodes.closeJoinButton.addEventListener("click", () => showOnly(nodes, "mode"));
   nodes.helpButton.addEventListener("click", () => nodes.helpPanel.classList.toggle("open"));
   nodes.closeHelpButton.addEventListener("click", () => nodes.helpPanel.classList.remove("open"));
   [nodes.backHomeButton, nodes.backGameButton].forEach(button => button.addEventListener("click", () => location.reload()));
@@ -174,7 +203,7 @@ function bindSettings(nodes, values, onSettings) {
   nodes.settingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
   nodes.menuSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.toggle("open"));
   nodes.closeSettingsButton.addEventListener("click", () => nodes.settingsPanel.classList.remove("open"));
-  [nodes.difficultySelect, nodes.qualitySelect, nodes.backgroundToggle, nodes.shakeToggle, nodes.soundToggle, nodes.musicToggle, nodes.volumeSelect].forEach(node => {
+  [nodes.difficultySelect, nodes.maxPlayersSelect, nodes.qualitySelect, nodes.backgroundToggle, nodes.shakeToggle, nodes.soundToggle, nodes.musicToggle, nodes.volumeSelect].forEach(node => {
     node.addEventListener("change", () => onSettings(readSettings(nodes)));
   });
   nodes.volumeSelect.addEventListener("input", () => {
@@ -193,7 +222,7 @@ function renderRooms(nodes, rooms, join) {
   open.forEach(room => {
     const button = document.createElement("button");
     button.className = "room-card";
-    button.innerHTML = `<strong>${room.id}</strong><span>${room.players}/${room.capacity} · ${room.difficulty}</span>`;
+    button.innerHTML = `<strong>${room.id}</strong><span>${room.players}/${room.capacity} · ${room.difficulty} · ${room.modeLabel || "多人"} · ${room.statusLabel || "等待中"}</span>`;
     button.addEventListener("click", () => join(room.id));
     nodes.roomList.appendChild(button);
   });
@@ -206,7 +235,8 @@ function updateStateText(nodes, state, playerId) {
   const me = state.players.find(player => player.id === playerId);
   if (me) {
     setText(nodes.profileName, me.name);
-    setText(nodes.playerText, `${me.name} / ${state.settings.difficultyLabel}`);
+    const suffix = state.mode === "solo" ? `分数 ${state.score || 0}` : `${state.players.length}/${state.maxPlayers || state.players.length}`;
+    setText(nodes.playerText, `${me.name} / ${state.settings.difficultyLabel} / ${suffix}`);
   }
   setText(nodes.challengeText, challengeLabel(state));
   updateCountdown(nodes, state);
@@ -228,15 +258,33 @@ function updateLobby(nodes, state, playerId) {
   });
 }
 
-function syncDifficulty(nodes, settings, state, playerId) {
+function renderGames(nodes, onSelect) {
+  nodes.gameList.innerHTML = "";
+  games.forEach(game => {
+    const button = document.createElement("button");
+    button.className = "game-card";
+    button.innerHTML = `
+      <span class="game-cover" style="background-image:url('${game.cover}')"></span>
+      <span><strong>${game.title}</strong><span>${game.description}</span><span class="game-tags">${game.supportedModes.map(tag => `<small>${tag}</small>`).join("")}</span></span>
+    `;
+    button.addEventListener("click", onSelect);
+    nodes.gameList.appendChild(button);
+  });
+}
+
+function syncRoomSettings(nodes, settings, state, playerId) {
   const me = state.players.find(player => player.id === playerId);
   const level = Number(state.settings.difficulty) || settings.values.difficulty;
+  const maxPlayers = Number(state.settings.maxPlayers) || settings.values.maxPlayers;
   const isHost = Boolean(me?.host);
   if (settings.values.difficulty !== level) settings.values.difficulty = level;
+  if (settings.values.maxPlayers !== maxPlayers) settings.values.maxPlayers = maxPlayers;
   if (Number(nodes.difficultySelect.value) !== level) nodes.difficultySelect.value = String(level);
+  if (Number(nodes.maxPlayersSelect.value) !== maxPlayers && maxPlayers > 1) nodes.maxPlayersSelect.value = String(maxPlayers);
   setText(nodes.difficultyValue, String(level));
   const locked = state.status === "running" || state.status === "countdown" || !isHost;
   nodes.difficultySelect.disabled = locked;
+  nodes.maxPlayersSelect.disabled = locked || state.mode === "solo";
   setText(nodes.difficultyHint, isHost ? difficultyHint(state.settings) : "只有房主可以修改难度。");
 }
 
@@ -265,6 +313,7 @@ function showMode(nodes, mode) {
 
 function challengeLabel(state) {
   if (state.status === "countdown") return `开始 ${Math.ceil(state.countdown)}s`;
+  if (state.target) return `目标 ${state.target.remaining.toFixed(1)}s · ${state.score || 0}`;
   if (state.challenge) return `区域 ${state.challenge.remaining.toFixed(1)}s`;
   if (state.status === "running") return `下一次 ${state.nextChallengeIn.toFixed(0)}s`;
   return "";
@@ -281,7 +330,8 @@ function updateResultPanel(nodes, state) {
   nodes.resultPanel.classList.toggle("hidden", state.status !== "gameover" || !result);
   if (!result) return;
   setText(nodes.resultReason, result.reason);
-  setText(nodes.resultStats, `${result.elapsed}s · ${result.difficulty}`);
+  const score = Number.isFinite(result.score) ? ` · 分数 ${result.score}` : "";
+  setText(nodes.resultStats, `${result.elapsed}s · ${result.difficulty}${score}`);
 }
 
 function showProfileError(nodes, message) {
@@ -306,6 +356,8 @@ function copyRoom(nodes) {
 function syncSettingsControls(nodes, values) {
   nodes.difficultySelect.value = values.difficulty;
   setText(nodes.difficultyValue, String(values.difficulty));
+  nodes.maxPlayersSelect.value = values.maxPlayers;
+  nodes.roomSizeSelect.value = values.maxPlayers;
   nodes.qualitySelect.value = values.quality;
   nodes.backgroundToggle.checked = values.showBackground;
   nodes.shakeToggle.checked = values.screenShake;
@@ -318,6 +370,7 @@ function syncSettingsControls(nodes, values) {
 function readSettings(nodes) {
   return {
     difficulty: Number(nodes.difficultySelect.value),
+    maxPlayers: Number(nodes.maxPlayersSelect.value),
     quality: nodes.qualitySelect.value,
     showBackground: nodes.backgroundToggle.checked,
     screenShake: nodes.shakeToggle.checked,
@@ -338,4 +391,11 @@ function difficultyHint(settings) {
   const max = settings.maxObstacles ? `最多 ${settings.maxObstacles} 个障碍` : "障碍数量随难度提升";
   const zone = settings.challengeDuration ? `区域 ${settings.challengeDuration}s` : "区域时间随难度缩短";
   return `${speed} · ${max} · ${zone}`;
+}
+
+function showOnly(nodes, panel) {
+  nodes.appRoot.classList.toggle("modal-open", panel !== "none");
+  nodes.gameSelectPanel.classList.toggle("hidden", panel !== "game");
+  nodes.modeSelectPanel.classList.toggle("hidden", panel !== "mode");
+  nodes.joinPanel.classList.toggle("hidden", panel !== "join");
 }

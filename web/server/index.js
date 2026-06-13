@@ -24,6 +24,7 @@ io.on("connection", socket => {
   socket.emit("roomList", publicRooms());
   socket.on("createRoom", data => createRoom(socket, data));
   socket.on("joinRoom", data => joinRoom(socket, data));
+  socket.on("soloStart", data => soloStart(socket, data));
   socket.on("setProfile", data => setProfile(socket, data));
   socket.on("setReady", ready => setReady(socket, ready));
   socket.on("setSettings", settings => setSettings(socket, settings));
@@ -57,6 +58,7 @@ function joinRoom(socket, data = {}) {
   const color = sanitizeColor(data.color);
   const name = sanitizeName(data.name);
   const room = getRoom(roomId);
+  room.configure(data.settings);
   if (!room.canJoin(socket.id)) {
     socket.emit("joinError", room.status === "waiting" ? "房间已满" : "游戏已经开始");
     return;
@@ -73,9 +75,26 @@ function joinRoom(socket, data = {}) {
 
 function createRoom(socket, data = {}) {
   const roomId = sanitizeRoom(data.roomId || randomRoomId());
-  getRoom(roomId);
+  getRoom(roomId).configure(data.settings);
   socket.emit("roomCreated", { roomId });
   emitRooms();
+}
+
+function soloStart(socket, data = {}) {
+  const roomId = `SOLO${Math.floor(100000 + Math.random() * 900000)}`;
+  const room = getRoom(roomId);
+  leaveCurrentRoom(socket);
+  room.configure({ ...(data.settings || {}), mode: "solo", maxPlayers: 1, public: false });
+  socket.join(roomId);
+  socket.data.roomId = roomId;
+  room.addPlayer(socket.id, {
+    color: sanitizeColor(data.color),
+    name: sanitizeName(data.name)
+  });
+  room.activePlayers().forEach(player => { player.ready = true; });
+  room.start();
+  socket.emit("joined", { playerId: socket.id, roomId, mode: "solo" });
+  io.to(roomId).emit("state", room.publicState());
 }
 
 function setProfile(socket, data = {}) {
@@ -156,7 +175,7 @@ function randomRoomId() {
 }
 
 function publicRooms() {
-  return [...rooms.values()].map(room => room.publicSummary());
+  return [...rooms.values()].filter(room => room.settings.public).map(room => room.publicSummary());
 }
 
 function emitRooms() {

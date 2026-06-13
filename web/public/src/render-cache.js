@@ -1,4 +1,4 @@
-import { line } from "./render-utils.js?v=20260613-smooth10";
+import { line } from "./render-utils.js?v=20260613-smooth11";
 
 const sceneBackground = new Image();
 sceneBackground.decoding = "async";

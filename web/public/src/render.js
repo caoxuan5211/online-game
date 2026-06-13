@@ -1,6 +1,6 @@
-import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-smooth10";
-import { drawStaticScene } from "./render-cache.js?v=20260613-smooth10";
-import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-smooth10";
+import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-smooth11";
+import { drawStaticScene } from "./render-cache.js?v=20260613-smooth11";
+import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-smooth11";
 
 const COLORS = {
   band: "#f0c766",
@@ -21,6 +21,7 @@ export function drawGame(canvas, state, playerId, prefs = {}) {
   if (!state) return drawCenter(ctx, canvas, "连接中");
   ctx.save();
   if (prefs.screenShake !== false) applyScreenShake(ctx, state, failure);
+  drawTarget(ctx, state.target, profile);
   drawChallenge(ctx, state, profile);
   if (profile.hints) drawDangerHints(ctx, state.obstacles, state.world);
   drawObstacles(ctx, state.obstacles, profile);
@@ -42,6 +43,24 @@ function drawChallenge(ctx, state, profile) {
   ctx.setLineDash([18, 10]);
   drawSplitLine(ctx, state.challenge.split, state.world);
   ctx.setLineDash([]);
+}
+
+function drawTarget(ctx, target, profile) {
+  if (!target) return;
+  const progress = target.remaining / target.duration;
+  const pulse = 0.72 + Math.sin(performance.now() / (profile.full ? 120 : 170)) * 0.08;
+  ctx.save();
+  ctx.translate(target.x, target.y);
+  ctx.fillStyle = `rgba(54,198,167,${0.2 + progress * 0.12})`;
+  ctx.strokeStyle = progress < 0.3 ? "rgba(255,116,95,0.92)" : "rgba(130,255,216,0.86)";
+  ctx.lineWidth = 5;
+  ctx.shadowColor = "rgba(54,198,167,0.5)";
+  ctx.shadowBlur = profile.full ? 18 : 0;
+  ctx.beginPath();
+  ctx.arc(0, 0, target.r * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawZone(ctx, zone, world, color, alpha) {
@@ -87,21 +106,38 @@ function drawObstacleCross(ctx, radius) {
 
 function drawBand(ctx, players, profile) {
   if (players.length < 2) return;
-  const [a, b] = players;
-  const strain = clamp((Math.hypot(a.x - b.x, a.y - b.y) - 190) / 200, 0, 1);
-  const gradient = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-  gradient.addColorStop(0, a.color || COLORS.band);
-  gradient.addColorStop(0.5, strain > 0.72 ? "#ff7a57" : COLORS.band);
-  gradient.addColorStop(1, b.color || COLORS.band);
-  ctx.shadowColor = strain > 0.72 ? "rgba(255,100,80,0.62)" : "rgba(240,199,102,0.38)";
-  ctx.strokeStyle = gradient;
-  ctx.lineWidth = 12;
-  ctx.lineCap = "round";
-  ctx.shadowBlur = profile.bandGlow ? 18 : 0;
-  ctx.setLineDash(strain > 0.72 ? [14, 10] : []);
-  drawElasticCurve(ctx, a, b, strain);
-  ctx.setLineDash([]);
-  ctx.shadowBlur = 0;
+  const edges = connectionEdges(players);
+  if (players.length > 2) drawTeamFill(ctx, players);
+  edges.forEach(([a, b]) => {
+    const strain = clamp((Math.hypot(a.x - b.x, a.y - b.y) - 190) / 200, 0, 1);
+    const gradient = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+    gradient.addColorStop(0, a.color || COLORS.band);
+    gradient.addColorStop(0.5, strain > 0.72 ? "#ff7a57" : COLORS.band);
+    gradient.addColorStop(1, b.color || COLORS.band);
+    ctx.shadowColor = strain > 0.72 ? "rgba(255,100,80,0.48)" : "rgba(240,199,102,0.28)";
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 9;
+    ctx.lineCap = "round";
+    ctx.shadowBlur = profile.bandGlow ? 10 : 0;
+    ctx.setLineDash(strain > 0.72 ? [14, 10] : []);
+    drawElasticCurve(ctx, a, b, strain);
+    ctx.setLineDash([]);
+    ctx.shadowBlur = 0;
+  });
+}
+
+function drawTeamFill(ctx, players) {
+  ctx.fillStyle = "rgba(240,199,102,0.08)";
+  ctx.beginPath();
+  ctx.moveTo(players[0].x, players[0].y);
+  players.slice(1).forEach(player => ctx.lineTo(player.x, player.y));
+  ctx.closePath();
+  ctx.fill();
+  const center = teamCenter(players);
+  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, 4, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawPlayers(ctx, players, playerId, profile) {
@@ -112,9 +148,9 @@ function drawPlayers(ctx, players, playerId, profile) {
     ctx.shadowBlur = profile.shadows ? 22 : 0;
     ctx.fillStyle = player.color || "#888";
     ctx.strokeStyle = player.id === playerId ? "#fff" : "rgba(255,255,255,0.35)";
-    ctx.lineWidth = player.id === playerId ? 6 : 3;
+    ctx.lineWidth = player.id === playerId ? 5 : 3;
     ctx.beginPath();
-    ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
+    ctx.arc(player.x, player.y, 16, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.shadowBlur = 0;
@@ -178,7 +214,7 @@ function drawFacingDot(ctx, player) {
   const angle = Math.atan2(player.vy || 0, player.vx || 1);
   ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.beginPath();
-  ctx.arc(player.x + Math.cos(angle) * 9, player.y + Math.sin(angle) * 9, 4, 0, Math.PI * 2);
+  ctx.arc(player.x + Math.cos(angle) * 7, player.y + Math.sin(angle) * 7, 3, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -213,6 +249,7 @@ function drawOverlay(ctx, canvas, state, failure) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (failure) drawFailureFade(ctx, canvas, failure);
   if (state.challenge) drawChallengeTimer(ctx, canvas, state.challenge);
+  if (state.target) drawChallengeTimer(ctx, canvas, state.target);
   if (state.status !== "running" && state.status !== "gameover") drawCenter(ctx, canvas, state.message);
 }
 
@@ -230,6 +267,18 @@ function drawChallengeTimer(ctx, canvas, challenge) {
   ctx.beginPath();
   ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
   ctx.stroke();
+}
+
+function connectionEdges(players) {
+  if (players.length === 2) return [[players[0], players[1]]];
+  return players.map((player, index) => [player, players[(index + 1) % players.length]]);
+}
+
+function teamCenter(players) {
+  return {
+    x: players.reduce((sum, player) => sum + player.x, 0) / players.length,
+    y: players.reduce((sum, player) => sum + player.y, 0) / players.length
+  };
 }
 
 function applyScreenShake(ctx, state, failure) {

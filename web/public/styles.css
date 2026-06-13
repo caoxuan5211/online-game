@@ -41,7 +41,7 @@ input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none
     radial-gradient(circle at 26% 26%, rgba(121, 184, 255, 0.24), transparent 30%),
     linear-gradient(90deg, rgba(16, 56, 140, 0.58) 0%, rgba(24, 94, 188, 0.32) 34%, rgba(255,255,255,0.04) 72%, transparent);
 }
-.player-card, .top-settings, .hero-panel, .room-panel, .lobby-panel, .countdown-overlay,
+.player-card, .top-settings, .hero-panel, .game-select-panel, .mode-select-panel, .room-panel, .lobby-panel, .countdown-overlay,
 .game-hud, .game-controls, .connection-status, .settings-panel, .help-panel, .joystick {
   position: fixed; z-index: 4;
 }
@@ -132,6 +132,7 @@ input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none
   display: flex; align-items: center; gap: 12px;
   color: rgba(255,255,255,0.78); animation: breathe 2.2s ease-in-out infinite;
 }
+.modal-open .connection-status { display: none; }
 .connection-status strong, .connection-status small { display: block; }
 .connection-status small { margin-top: 2px; font-size: 0.72rem; letter-spacing: 0.14em; }
 .spinner {
@@ -139,14 +140,14 @@ input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none
   border-top-color: var(--white); border-radius: 50%; animation: spin 1.2s linear infinite;
 }
 
-.room-panel, .lobby-panel, .settings-panel, .help-panel {
+.game-select-panel, .mode-select-panel, .room-panel, .lobby-panel, .settings-panel, .help-panel {
   width: min(390px, calc(100vw - 36px)); padding: 22px;
   border: 1px solid rgba(255,255,255,0.72); border-radius: 24px;
   background: rgba(255,255,255,0.72); color: #183c9c;
   box-shadow: 0 26px 76px rgba(49,91,220,0.24), inset 0 1px rgba(255,255,255,0.92);
   backdrop-filter: blur(18px) saturate(1.2);
 }
-.room-panel {
+.game-select-panel, .mode-select-panel, .room-panel {
   left: clamp(34px, 7vw, 108px); top: 50%;
   transform: translateY(-42%); display: grid; gap: 16px;
 }
@@ -157,7 +158,7 @@ input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none
 .panel-head, .settings-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .circle-button { width: 44px; height: 44px; color: var(--ink); font-weight: 900; }
 .hidden { display: none !important; }
-.room-list, .lobby-players { display: grid; gap: 10px; max-height: 220px; overflow: auto; }
+.room-list, .lobby-players, .game-list, .mode-grid { display: grid; gap: 10px; max-height: 220px; overflow: auto; }
 .empty-room {
   min-height: 82px; display: grid; place-items: center; border: 1px dashed rgba(49,91,220,0.34);
   border-radius: 16px; color: rgba(24,60,156,0.72);
@@ -167,6 +168,17 @@ input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none
   border-radius: 16px; background: rgba(255,255,255,0.76); color: var(--ink); text-align: left;
   box-shadow: 0 10px 24px rgba(49,91,220,0.12);
 }
+.game-card, .mode-card {
+  min-height: 96px; padding: 14px; display: grid; gap: 8px; text-align: left;
+  border-radius: 16px; color: var(--ink);
+  background: rgba(255,255,255,0.76); box-shadow: 0 10px 24px rgba(49,91,220,0.12);
+}
+.game-card { grid-template-columns: 92px 1fr; align-items: center; }
+.game-cover { width: 92px; height: 68px; border-radius: 12px; background: url("./assets/background.png") center / cover; }
+.game-card strong, .mode-card strong { font-size: 1.06rem; }
+.game-card span, .mode-card span { color: rgba(24,60,156,0.66); line-height: 1.35; }
+.game-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.game-tags small { padding: 3px 7px; border-radius: 999px; background: rgba(79,104,255,0.12); color: var(--primary-deep); }
 .room-card span { color: rgba(24,60,156,0.66); font-size: 0.88rem; }
 .lobby-grid { display: grid; gap: 14px; }
 .field-label { display: block; margin-bottom: 8px; }
@@ -270,7 +282,7 @@ canvas {
   .start-orb { width: 52px; height: 52px; }
   .menu-link { min-height: 58px; padding: 6px 12px; }
   .line-icon { width: 42px; height: 42px; font-size: 1.1rem; }
-  .room-panel, .lobby-panel {
+  .game-select-panel, .mode-select-panel, .room-panel, .lobby-panel {
     left: 12px; right: 12px; top: max(76px, env(safe-area-inset-top)); bottom: 14px;
     width: auto; max-height: none; padding: 16px; transform: none; overflow: auto;
   }
@@ -290,7 +302,7 @@ canvas {
   .hero-panel { top: 8vh; width: min(360px, 54vw); }
   .hero-panel h1 { font-size: clamp(2.4rem, 9vw, 4rem); }
   .start-button { min-height: 64px; }
-  .room-panel, .lobby-panel { top: 10px; bottom: 10px; left: 12px; width: min(520px, calc(100vw - 24px)); overflow: auto; transform: none; }
+  .game-select-panel, .mode-select-panel, .room-panel, .lobby-panel { top: 10px; bottom: 10px; left: 12px; width: min(520px, calc(100vw - 24px)); overflow: auto; transform: none; }
   .game-mode .joystick { width: 116px; height: 116px; bottom: 48px; }
   .game-mode .game-controls { right: 10px; bottom: 8px; }
 }

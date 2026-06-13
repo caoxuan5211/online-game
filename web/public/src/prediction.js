@@ -1,4 +1,4 @@
-const PLAYER_RADIUS = 18;
+const PLAYER_RADIUS = 15;
 const MAX_SPEED = 520;
 const RESPONSE = 18;
 const STOP_RESPONSE = 22;
@@ -22,11 +22,10 @@ export function predictLocalState(state, playerId, input) {
   }
   const source = state.players.find(player => player.id === playerId);
   if (!source) return state;
-  const teammate = state.players.find(player => player.id !== playerId);
   const moving = Boolean(input.x || input.y);
   syncLocal(source, state.world, state.tick, moving);
   const dt = stepLocal(input, state.world, moving);
-  if (teammate) applyPredictedTether(local, teammate, dt);
+  neighbors(state.players, playerId).forEach(teammate => applyPredictedTether(local, teammate, dt));
   const players = state.players.map(player => (
     player.id === playerId ? { ...player, ...local } : player
   ));
@@ -91,8 +90,20 @@ function applyPredictedTether(player, teammate, dt) {
 
 function predictTether(players) {
   if (players.length < 2) return { distance: 0, strain: 0 };
-  const distance = Math.hypot(players[0].x - players[1].x, players[0].y - players[1].y);
+  const distance = Math.max(...connectionEdges(players).map(([a, b]) => Math.hypot(a.x - b.x, a.y - b.y)));
   return { distance, strain: clamp((distance - 190) / 200, 0, 1) };
+}
+
+function neighbors(players, playerId) {
+  return connectionEdges(players)
+    .filter(([a, b]) => a.id === playerId || b.id === playerId)
+    .map(([a, b]) => (a.id === playerId ? b : a));
+}
+
+function connectionEdges(players) {
+  if (players.length <= 1) return [];
+  if (players.length === 2) return [[players[0], players[1]]];
+  return players.map((player, index) => [player, players[(index + 1) % players.length]]);
 }
 
 function limitSpeed(player, max) {

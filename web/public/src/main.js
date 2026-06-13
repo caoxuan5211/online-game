@@ -1,11 +1,11 @@
-import { drawGame } from "./render.js?v=20260613-smooth10";
-import { createInput } from "./input.js?v=20260613-smooth10";
-import { predictLocalState } from "./prediction.js?v=20260613-smooth10";
-import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth10";
-import { createSettings } from "./settings.js?v=20260613-smooth10";
-import { createStateBuffer } from "./smoothing.js?v=20260613-smooth10";
-import { setupUi } from "./ui.js?v=20260613-smooth10";
-import { createAudio } from "./audio.js?v=20260613-smooth10";
+import { drawGame } from "./render.js?v=20260613-smooth11";
+import { createInput } from "./input.js?v=20260613-smooth11";
+import { predictLocalState } from "./prediction.js?v=20260613-smooth11";
+import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth11";
+import { createSettings } from "./settings.js?v=20260613-smooth11";
+import { createStateBuffer } from "./smoothing.js?v=20260613-smooth11";
+import { setupUi } from "./ui.js?v=20260613-smooth11";
+import { createAudio } from "./audio.js?v=20260613-smooth11";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");
@@ -22,15 +22,21 @@ const ui = setupUi({
   session,
   settings,
   onJoin: joinRoom,
+  onSolo: startSolo,
   onProfile: data => socket.emit("setProfile", data),
   onReady: ready => socket.emit("setReady", ready),
   onRestart: () => socket.emit("restart"),
   onSettings: next => {
     const previousDifficulty = settings.values.difficulty;
+    const previousMaxPlayers = settings.values.maxPlayers;
     settings.update(next);
     audio.update(settings.values);
-    if (session.joined && settings.values.difficulty !== previousDifficulty) {
-      socket.emit("setSettings", { difficulty: settings.values.difficulty });
+    const roomChanged = settings.values.difficulty !== previousDifficulty || settings.values.maxPlayers !== previousMaxPlayers;
+    if (session.joined && roomChanged) {
+      socket.emit("setSettings", {
+        difficulty: settings.values.difficulty,
+        maxPlayers: settings.values.maxPlayers
+      });
     }
   }
 });
@@ -76,7 +82,26 @@ function sendInput(force = false) {
 
 function joinRoom(options) {
   session.color = options.color;
-  socket.emit("joinRoom", { ...options, settings: { difficulty: settings.values.difficulty } });
+  socket.emit("joinRoom", {
+    ...options,
+    settings: {
+      difficulty: settings.values.difficulty,
+      mode: options.mode || "multi",
+      maxPlayers: options.maxPlayers || settings.values.maxPlayers
+    }
+  });
+}
+
+function startSolo(options) {
+  session.color = options.color;
+  socket.emit("soloStart", {
+    ...options,
+    settings: {
+      difficulty: settings.values.difficulty,
+      mode: "solo",
+      maxPlayers: 1
+    }
+  });
 }
 
 function frame() {

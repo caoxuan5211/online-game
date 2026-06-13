@@ -1,16 +1,16 @@
 export function createChallenge(players, count, difficulty) {
   const split = pickSplit(count);
-  const firstPlayer = Math.random() > 0.5 ? players[0] : players[1];
-  const secondPlayer = players.find(player => player.id !== firstPlayer.id);
+  const ordered = shuffle(players);
   const duration = difficulty.challengeDuration;
   return {
     duration,
     remaining: duration,
     split,
-    assignments: [
-      { playerId: firstPlayer.id, color: firstPlayer.color, zone: split.zones[0] },
-      { playerId: secondPlayer.id, color: secondPlayer.color, zone: split.zones[1] }
-    ]
+    assignments: ordered.map((player, index) => ({
+      playerId: player.id,
+      color: player.color,
+      zone: split.zones[index % split.zones.length]
+    }))
   };
 }
 
@@ -38,4 +38,8 @@ function pickSplit(count) {
     { type: "diagonalUp", zones: ["diagUpA", "diagUpB"] }
   ];
   return count === 1 ? splits[0] : splits[Math.floor(Math.random() * splits.length)];
+}
+
+function shuffle(items) {
+  return [...items].sort(() => Math.random() - 0.5);
 }

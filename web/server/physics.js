@@ -1,5 +1,5 @@
 export const WORLD = { width: 1280, height: 720 };
-export const PLAYER_RADIUS = 18;
+export const PLAYER_RADIUS = 15;
 export const REST_LENGTH = 190;
 export const FAIL_DISTANCE = 390;
 export const DEFAULT_DIFFICULTY = 5;
@@ -14,8 +14,15 @@ export function createPlayer(id, name, color, index) {
 }
 
 export function resetPlayer(player, index) {
-  player.x = index === 0 ? WORLD.width * 0.42 : WORLD.width * 0.58;
-  player.y = WORLD.height * 0.52;
+  const positions = [
+    [0.42, 0.52],
+    [0.58, 0.52],
+    [0.5, 0.4],
+    [0.5, 0.64]
+  ];
+  const [x, y] = positions[index] || [0.5, 0.52];
+  player.x = WORLD.width * x;
+  player.y = WORLD.height * y;
   player.vx = 0;
   player.vy = 0;
   player.ready = false;
@@ -97,11 +104,17 @@ export function publicPlayer(player, meta = {}) {
 }
 
 export function collide(player, obstacle) {
-  return Math.hypot(player.x - obstacle.x, player.y - obstacle.y) < PLAYER_RADIUS + obstacle.r * 0.72;
+  return Math.hypot(player.x - obstacle.x, player.y - obstacle.y) < PLAYER_RADIUS * 0.92 + obstacle.r * 0.66;
 }
 
 export function tetherDistance(players) {
-  return Math.hypot(players[0].x - players[1].x, players[0].y - players[1].y);
+  return Math.max(0, ...connectionEdges(players).map(([a, b]) => Math.hypot(a.x - b.x, a.y - b.y)));
+}
+
+export function connectionEdges(players) {
+  if (players.length <= 1) return [];
+  if (players.length === 2) return [[players[0], players[1]]];
+  return players.map((player, index) => [player, players[(index + 1) % players.length]]);
 }
 
 export function inBounds(o) {
