@@ -16,6 +16,7 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
   const nodes = getNodes();
   let selectedColor = "#4f68ff";
   let ready = false;
+  let resultNavigation = false;
   let joinPending = false;
   let joinTimer = null;
   bindShell(nodes);
@@ -29,6 +30,7 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
     maxPlayers: Number(nodes.roomSizeSelect.value)
   }));
   nodes.soloModeButton.addEventListener("click", () => {
+    resultNavigation = false;
     showOnly(nodes, "none");
     onSolo({ name: nodes.nameInput.value, color: selectedColor });
   });
@@ -40,14 +42,17 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
   });
   nodes.restartButton.addEventListener("click", () => {
     ready = false;
+    resultNavigation = false;
     onRestart();
   });
   [nodes.resultRestartButton, nodes.resultLobbyButton].forEach(button => button.addEventListener("click", () => {
     ready = false;
+    resultNavigation = false;
     onRestart();
   }));
   nodes.resultModeButton.addEventListener("click", () => {
     ready = false;
+    resultNavigation = true;
     nodes.resultPanel.classList.add("hidden");
     showMode(nodes, "menu");
     showOnly(nodes, "mode");
@@ -63,6 +68,7 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
       nodes.createRoomButton.disabled = false;
       nodes.joinError.textContent = "";
       nodes.profileRoom.textContent = roomId.toUpperCase();
+      resultNavigation = false;
       nodes.joinPanel.classList.add("hidden");
       showMode(nodes, "lobby");
       nodes.readyButton.disabled = false;
@@ -75,7 +81,8 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
         syncSelectedColor(nodes, me.color);
       }
       syncRoomSettings(nodes, settings, state, session.playerId);
-      updateStateText(nodes, state, session.playerId);
+      if (state.status !== "gameover") resultNavigation = false;
+      updateStateText(nodes, state, session.playerId, resultNavigation);
       updateLobby(nodes, state, session.playerId);
       ready = updateReadyButton(nodes, state, session.playerId, ready);
     },
@@ -95,6 +102,7 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
 
   function join(roomId, options = {}) {
     if (joinPending) return;
+    resultNavigation = true;
     joinPending = true;
     nodes.createRoomButton.disabled = true;
     nodes.joinError.textContent = "正在进入房间...";
@@ -241,7 +249,7 @@ function renderRooms(nodes, rooms, join) {
   });
 }
 
-function updateStateText(nodes, state, playerId) {
+function updateStateText(nodes, state, playerId, resultNavigation) {
   setText(nodes.statusText, state.message);
   setText(nodes.timerText, `${state.elapsed}s`);
   nodes.restartButton.disabled = state.status !== "gameover";
@@ -253,7 +261,8 @@ function updateStateText(nodes, state, playerId) {
   }
   setText(nodes.challengeText, challengeLabel(state));
   updateCountdown(nodes, state);
-  updateResultPanel(nodes, state);
+  updateResultPanel(nodes, state, resultNavigation);
+  if (resultNavigation && state.status === "gameover") return;
   if (state.status === "running") showMode(nodes, "game");
   if (state.status === "waiting" || state.status === "countdown") showMode(nodes, "lobby");
   if (state.status === "gameover") showMode(nodes, "game");
@@ -345,9 +354,9 @@ function updateCountdown(nodes, state) {
   if (active) setText(nodes.countdownNumber, Math.max(1, Math.ceil(state.countdown)));
 }
 
-function updateResultPanel(nodes, state) {
+function updateResultPanel(nodes, state, resultNavigation) {
   const result = state.result;
-  nodes.resultPanel.classList.toggle("hidden", state.status !== "gameover" || !result);
+  nodes.resultPanel.classList.toggle("hidden", resultNavigation || state.status !== "gameover" || !result);
   if (!result) return;
   setText(nodes.resultReason, result.reason);
   const score = Number.isFinite(result.score) ? ` · 分数 ${result.score}` : "";
