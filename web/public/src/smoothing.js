@@ -8,6 +8,9 @@ export function createStateBuffer() {
       frames.push({ at: performance.now(), state });
       if (frames.length > 8) frames.shift();
     },
+    clear() {
+      frames.length = 0;
+    },
     current() {
       if (frames.length === 0) return null;
       if (frames.length === 1) return frames[0].state;

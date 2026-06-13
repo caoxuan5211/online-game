@@ -12,7 +12,7 @@ const roomSizes = [
   { value: 4, title: "4 人方阵协作", short: "4 人" }
 ];
 
-export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady, onRestart, onSettings }) {
+export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady, onRestart, onModeSelect, onSettings }) {
   const nodes = getNodes();
   let selectedColor = "#4f68ff";
   let ready = false;
@@ -53,6 +53,7 @@ export function setupUi({ session, settings, onJoin, onSolo, onProfile, onReady,
   nodes.resultModeButton.addEventListener("click", () => {
     ready = false;
     resultNavigation = true;
+    onModeSelect();
     nodes.resultPanel.classList.add("hidden");
     showMode(nodes, "menu");
     showOnly(nodes, "mode");

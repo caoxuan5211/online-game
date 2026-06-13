@@ -1,11 +1,11 @@
-import { drawGame } from "./render.js?v=20260613-smooth17";
-import { createInput } from "./input.js?v=20260613-smooth17";
-import { predictLocalState } from "./prediction.js?v=20260613-smooth17";
-import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth17";
-import { createSettings } from "./settings.js?v=20260613-smooth17";
-import { createStateBuffer } from "./smoothing.js?v=20260613-smooth17";
-import { setupUi } from "./ui.js?v=20260613-smooth17";
-import { createAudio } from "./audio.js?v=20260613-smooth17";
+import { drawGame } from "./render.js?v=20260613-smooth18";
+import { createInput } from "./input.js?v=20260613-smooth18";
+import { predictLocalState } from "./prediction.js?v=20260613-smooth18";
+import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth18";
+import { createSettings } from "./settings.js?v=20260613-smooth18";
+import { createStateBuffer } from "./smoothing.js?v=20260613-smooth18";
+import { setupUi } from "./ui.js?v=20260613-smooth18";
+import { createAudio } from "./audio.js?v=20260613-smooth18";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");
@@ -26,6 +26,7 @@ const ui = setupUi({
   onProfile: data => socket.emit("setProfile", data),
   onReady: ready => socket.emit("setReady", ready),
   onRestart: () => socket.emit("restart"),
+  onModeSelect: resetConnectionForModeSelect,
   onSettings: next => {
     const previousDifficulty = settings.values.difficulty;
     const previousMaxPlayers = settings.values.maxPlayers;
@@ -102,6 +103,15 @@ function startSolo(options) {
       maxPlayers: 1
     }
   });
+}
+
+function resetConnectionForModeSelect() {
+  session.joined = false;
+  session.playerId = null;
+  session.state = null;
+  buffer.clear();
+  socket.disconnect();
+  setTimeout(() => socket.connect(), 50);
 }
 
 function frame() {
