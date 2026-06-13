@@ -1,14 +1,16 @@
-import { drawGame } from "./render.js?v=20260613-smooth7";
-import { createInput } from "./input.js?v=20260613-smooth7";
-import { predictLocalState } from "./prediction.js?v=20260613-smooth7";
-import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth7";
-import { createSettings } from "./settings.js?v=20260613-smooth7";
-import { createStateBuffer } from "./smoothing.js?v=20260613-smooth7";
-import { setupUi } from "./ui.js?v=20260613-smooth7";
+import { drawGame } from "./render.js?v=20260613-smooth8";
+import { createInput } from "./input.js?v=20260613-smooth8";
+import { predictLocalState } from "./prediction.js?v=20260613-smooth8";
+import { finishLoader, preloadReady, setLoaderStatus } from "./preload.js?v=20260613-smooth8";
+import { createSettings } from "./settings.js?v=20260613-smooth8";
+import { createStateBuffer } from "./smoothing.js?v=20260613-smooth8";
+import { setupUi } from "./ui.js?v=20260613-smooth8";
+import { createAudio } from "./audio.js?v=20260613-smooth8";
 
 const config = window.GAME_CONFIG || {};
 const canvas = document.querySelector("#gameCanvas");
 const settings = createSettings();
+const audio = createAudio(settings.values);
 const socket = io(config.serverUrl || location.origin, { transports: ["websocket", "polling"] });
 const input = createInput(() => sendInput(true));
 const buffer = createStateBuffer();
@@ -24,8 +26,12 @@ const ui = setupUi({
   onReady: ready => socket.emit("setReady", ready),
   onRestart: () => socket.emit("restart"),
   onSettings: next => {
+    const previousDifficulty = settings.values.difficulty;
     settings.update(next);
-    if (session.joined) socket.emit("setSettings", { difficulty: settings.values.difficulty });
+    audio.update(settings.values);
+    if (session.joined && settings.values.difficulty !== previousDifficulty) {
+      socket.emit("setSettings", { difficulty: settings.values.difficulty });
+    }
   }
 });
 const loaderFallback = setTimeout(() => finishLoader("进入游戏"), 4500);
@@ -50,6 +56,7 @@ socket.on("state", state => {
   session.state = state;
   buffer.push(state);
   ui.update(state);
+  audio.updateState(state);
 });
 
 setInterval(() => sendInput(false), 1000 / 30);

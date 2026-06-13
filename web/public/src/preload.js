@@ -1,4 +1,4 @@
-const BUILD = "20260613-smooth7";
+const BUILD = "20260613-smooth8";
 const ASSETS = [
   { url: "./assets/background.png", type: "image", label: "背景图" },
   { url: versioned("./styles.css"), label: "样式" },
@@ -11,6 +11,7 @@ const ASSETS = [
   { url: versioned("./src/render-cache.js"), label: "场景缓存" },
   { url: versioned("./src/render-quality.js"), label: "性能模块" },
   { url: versioned("./src/ui.js"), label: "界面模块" },
+  { url: versioned("./src/audio.js"), label: "音频模块" },
   { url: versioned("./src/input.js"), label: "输入模块" },
   { url: versioned("./src/smoothing.js"), label: "同步模块" },
   { url: versioned("./src/render-utils.js"), label: "绘制工具" },

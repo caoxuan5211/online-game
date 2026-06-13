@@ -1,6 +1,6 @@
-import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-smooth7";
-import { drawStaticScene } from "./render-cache.js?v=20260613-smooth7";
-import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-smooth7";
+import { drawSplitLine, hexToRgba, line, roundRect, zonePoints } from "./render-utils.js?v=20260613-smooth8";
+import { drawStaticScene } from "./render-cache.js?v=20260613-smooth8";
+import { prepareCanvas, resolveRenderProfile } from "./render-quality.js?v=20260613-smooth8";
 
 const COLORS = {
   band: "#f0c766",

@@ -28,6 +28,9 @@ input, select {
   background: rgba(255, 255, 255, 0.78); color: #183c9c;
   box-shadow: inset 0 1px 10px rgba(49, 91, 220, 0.08);
 }
+input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none; background: transparent; }
+.range-value { float: right; color: var(--primary-deep); font-weight: 900; }
+.settings-hint { display: block; margin-top: 6px; color: rgba(24,60,156,0.62); line-height: 1.35; }
 
 .app-root { position: relative; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; }
 .scene-bg, .left-overlay { position: fixed; inset: 0; pointer-events: none; }

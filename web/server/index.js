@@ -65,7 +65,7 @@ function joinRoom(socket, data = {}) {
   socket.join(roomId);
   socket.data.roomId = roomId;
   room.addPlayer(socket.id, { color, name });
-  room.setSettings(data.settings);
+  room.setSettings(socket.id, data.settings);
   socket.emit("joined", { playerId: socket.id, roomId });
   io.to(roomId).emit("state", room.publicState());
   emitRooms();
@@ -73,8 +73,7 @@ function joinRoom(socket, data = {}) {
 
 function createRoom(socket, data = {}) {
   const roomId = sanitizeRoom(data.roomId || randomRoomId());
-  const room = getRoom(roomId);
-  room.setSettings(data.settings);
+  getRoom(roomId);
   socket.emit("roomCreated", { roomId });
   emitRooms();
 }
@@ -102,7 +101,10 @@ function setReady(socket, ready) {
 function setSettings(socket, settings = {}) {
   const room = rooms.get(socket.data.roomId);
   if (!room) return;
-  room.setSettings(settings);
+  const result = room.setSettings(socket.id, settings);
+  if (result?.ok === false && result.message) socket.emit("profileError", result.message);
+  io.to(socket.data.roomId).emit("state", room.publicState());
+  emitRooms();
 }
 
 function setInput(socket, input = {}) {

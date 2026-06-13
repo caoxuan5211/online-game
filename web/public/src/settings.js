@@ -1,9 +1,11 @@
 const DEFAULTS = {
-  difficulty: "normal",
+  difficulty: 5,
   quality: "high",
   screenShake: true,
   showBackground: true,
-  showJoystick: true
+  showJoystick: true,
+  sound: true,
+  music: true
 };
 
 export function createSettings() {
@@ -30,12 +32,20 @@ function readStored() {
 
 function sanitize(value = {}) {
   return {
-    difficulty: ["easy", "normal", "hard"].includes(value.difficulty) ? value.difficulty : DEFAULTS.difficulty,
+    difficulty: sanitizeDifficulty(value.difficulty),
     quality: value.quality === "low" ? "low" : DEFAULTS.quality,
     screenShake: value.screenShake !== false,
     showBackground: value.showBackground !== false,
-    showJoystick: value.showJoystick !== false
+    showJoystick: value.showJoystick !== false,
+    sound: value.sound !== false,
+    music: value.music !== false
   };
+}
+
+function sanitizeDifficulty(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULTS.difficulty;
+  return Math.round(Math.max(1, Math.min(10, number)));
 }
 
 function applyDom(values) {

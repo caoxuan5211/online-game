@@ -1,15 +1,14 @@
 import { createChallenge, playerInZone } from "./challenge.js";
 import { updatePlayers } from "./movement.js";
 import {
-  DIFFICULTIES, FAIL_DISTANCE, MAX_OBSTACLES, REST_LENGTH, WORLD,
+  DEFAULT_DIFFICULTY, FAIL_DISTANCE, REST_LENGTH, WORLD,
   clamp, collide, createObstacle, createPlayer, inBounds, normalizeInput,
-  pickColor, publicPlayer, randomBetween, resetPlayer, tetherDistance
+  normalizeDifficulty, pickColor, publicPlayer, randomBetween, resetPlayer,
+  resolveDifficulty, tetherDistance
 } from "./physics.js";
 export function createGameRoom(id) {
   return new GameRoom(id);
 }
-const FIRST_CHALLENGE_DELAY = [2.6, 4.6];
-const REPEAT_CHALLENGE_DELAY = [3.2, 6.2];
 const TETHER_PULL = 0.42;
 const TETHER_DAMPING = 0.58;
 
@@ -22,12 +21,12 @@ class GameRoom {
     this.elapsed = 0;
     this.tick = 0;
     this.spawnTimer = 1;
-    this.settings = { difficulty: "normal" };
+    this.settings = { difficulty: DEFAULT_DIFFICULTY };
     this.challenge = null;
     this.challengeCount = 0;
     this.countdown = 0;
     this.lastResult = null;
-    this.nextChallenge = randomBetween(...FIRST_CHALLENGE_DELAY);
+    this.nextChallenge = nextChallengeDelay(this.difficulty(), "first");
     this.message = "等待两名玩家准备";
   }
 
@@ -75,10 +74,12 @@ class GameRoom {
     return { ok: true };
   }
 
-  setSettings(settings = {}) {
-    if (!DIFFICULTIES[settings.difficulty]) return;
+  setSettings(id, settings = {}) {
+    if (!this.isHost(id)) return { ok: false, message: "只有房主可以修改难度" };
     if (this.status === "running") return;
-    this.settings.difficulty = settings.difficulty;
+    this.settings.difficulty = normalizeDifficulty(settings.difficulty);
+    if (this.status === "waiting") this.nextChallenge = nextChallengeDelay(this.difficulty(), "first");
+    return { ok: true };
   }
 
   restart() {
@@ -92,7 +93,7 @@ class GameRoom {
     this.countdown = 0;
     this.challengeCount = 0;
     this.lastResult = null;
-    this.nextChallenge = randomBetween(...FIRST_CHALLENGE_DELAY);
+    this.nextChallenge = nextChallengeDelay(this.difficulty(), "first");
     this.message = "等待两名玩家准备";
     current.forEach((p, index) => this.players.set(p.id, createPlayer(p.id, p.name, p.color, index)));
   }
@@ -105,7 +106,7 @@ class GameRoom {
       tick: this.tick,
       elapsed: Math.round(this.elapsed),
       message: this.message,
-      settings: { difficulty: this.settings.difficulty, difficultyLabel: DIFFICULTIES[this.settings.difficulty].label },
+      settings: publicSettings(this.difficulty()),
       nextChallengeIn: Math.max(0, this.nextChallenge),
       countdown: Math.max(0, this.countdown),
       result: this.lastResult,
@@ -143,11 +144,11 @@ class GameRoom {
     this.elapsed = 0;
     this.tick = 0;
     this.obstacles = [];
-    this.spawnTimer = DIFFICULTIES[this.settings.difficulty].warmup;
+    this.spawnTimer = this.difficulty().warmup;
     this.challenge = null;
     this.challengeCount = 0;
     this.lastResult = null;
-    this.nextChallenge = randomBetween(...FIRST_CHALLENGE_DELAY);
+    this.nextChallenge = nextChallengeDelay(this.difficulty(), "first");
     this.message = "躲避障碍，等待颜色区域";
     this.activePlayers().forEach((p, index) => resetPlayer(p, index));
   }
@@ -167,7 +168,7 @@ class GameRoom {
     this.lastResult = {
       reason,
       elapsed: Math.round(this.elapsed),
-      difficulty: DIFFICULTIES[this.settings.difficulty].label
+      difficulty: this.difficulty().label
     };
   }
 
@@ -183,13 +184,17 @@ class GameRoom {
 
   publicSummary() {
     const active = this.activePlayers();
-    return { id: this.id, status: this.status, players: active.length, capacity: 2, difficulty: DIFFICULTIES[this.settings.difficulty].label };
+    return { id: this.id, status: this.status, players: active.length, capacity: 2, difficulty: this.difficulty().label };
   }
 
   hasUniqueColor(id) {
     const player = this.players.get(id);
     return Boolean(player) && !this.activePlayers().some(p => p.id !== id && p.color === player.color);
   }
+
+  difficulty() { return resolveDifficulty(this.settings.difficulty); }
+
+  isHost(id) { return this.activePlayers()[0]?.id === id; }
 }
 
 export function updateRoom(room, dt) {
@@ -235,7 +240,7 @@ function applyElasticBand(players, dt) {
 }
 
 function updateObstacles(room, dt) {
-  const difficulty = DIFFICULTIES[room.settings.difficulty];
+  const difficulty = room.difficulty();
   room.spawnTimer -= dt;
   if (room.spawnTimer <= 0) {
     room.obstacles.push(createObstacle(room.elapsed, difficulty));
@@ -246,7 +251,7 @@ function updateObstacles(room, dt) {
     o.y += o.vy * dt;
     o.spin += o.spinSpeed * dt;
   });
-  room.obstacles = room.obstacles.filter(o => inBounds(o)).slice(-MAX_OBSTACLES);
+  room.obstacles = room.obstacles.filter(o => inBounds(o)).slice(-difficulty.maxObstacles);
 }
 
 function updateChallenge(room, dt) {
@@ -258,18 +263,18 @@ function updateChallenge(room, dt) {
   room.nextChallenge -= dt;
   if (room.nextChallenge <= 0) {
     room.challengeCount += 1;
-    room.challenge = createChallenge(room.activePlayers(), room.challengeCount);
+    room.challenge = createChallenge(room.activePlayers(), room.challengeCount, room.difficulty());
   }
 }
 
 function finishChallenge(room) {
   const failed = room.activePlayers().find(p => {
     const assignment = room.challenge.assignments.find(item => item.playerId === p.id);
-    return assignment && !playerInZone(p, assignment.zone);
+    return assignment && !playerInZone(p, assignment.zone, WORLD);
   });
   if (failed) room.endGame(`${failed.name} 没有及时进入颜色区域`);
   room.challenge = null;
-  room.nextChallenge = randomBetween(...REPEAT_CHALLENGE_DELAY);
+  room.nextChallenge = nextChallengeDelay(room.difficulty(), "repeat");
 }
 
 function checkFailures(room, players) {
@@ -283,4 +288,21 @@ function uniqueColors(players) { return new Set(players.map(p => p.color)).size 
 function defaultName(name, index) {
   const value = String(name || "").trim();
   return !value || value === "Player" ? `Player ${index + 1}` : value;
+}
+
+function nextChallengeDelay(difficulty, mode) {
+  if (mode === "first") return randomBetween(difficulty.firstChallengeMin, difficulty.firstChallengeMax);
+  return randomBetween(difficulty.repeatChallengeMin, difficulty.repeatChallengeMax);
+}
+
+function publicSettings(difficulty) {
+  return {
+    difficulty: difficulty.level,
+    difficultyLabel: difficulty.label,
+    speed: Number(difficulty.speed.toFixed(2)),
+    spawnMin: Number(difficulty.spawnMin.toFixed(2)),
+    spawnMax: Number(difficulty.spawnMax.toFixed(2)),
+    maxObstacles: difficulty.maxObstacles,
+    challengeDuration: Number(difficulty.challengeDuration.toFixed(2))
+  };
 }

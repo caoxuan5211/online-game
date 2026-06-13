@@ -2,12 +2,9 @@ export const WORLD = { width: 1280, height: 720 };
 export const PLAYER_RADIUS = 18;
 export const REST_LENGTH = 190;
 export const FAIL_DISTANCE = 390;
-export const MAX_OBSTACLES = 34;
-export const DIFFICULTIES = {
-  easy: { label: "轻松", speed: 0.82, spawnMin: 0.78, spawnMax: 1.22, warmup: 2.8 },
-  normal: { label: "标准", speed: 1, spawnMin: 0.52, spawnMax: 0.94, warmup: 2.1 },
-  hard: { label: "高压", speed: 1.18, spawnMin: 0.34, spawnMax: 0.7, warmup: 1.55 }
-};
+export const DEFAULT_DIFFICULTY = 5;
+export const DIFFICULTY_MIN = 1;
+export const DIFFICULTY_MAX = 10;
 
 const DEFAULT_COLORS = ["#4f68ff", "#f05a52", "#36c6a7", "#f0c766", "#c56bff", "#ff8a4f"];
 
@@ -36,6 +33,31 @@ export function normalizeInput(input) {
   const y = clamp(Number(input.y) || 0, -1, 1);
   const length = Math.hypot(x, y);
   return length > 1 ? { x: x / length, y: y / length } : { x, y };
+}
+
+export function normalizeDifficulty(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return DEFAULT_DIFFICULTY;
+  return Math.round(clamp(number, DIFFICULTY_MIN, DIFFICULTY_MAX));
+}
+
+export function resolveDifficulty(value) {
+  const level = normalizeDifficulty(value);
+  const t = (level - DIFFICULTY_MIN) / (DIFFICULTY_MAX - DIFFICULTY_MIN);
+  return {
+    level,
+    label: `难度 ${level}`,
+    speed: lerp(0.78, 1.52, t),
+    spawnMin: lerp(0.9, 0.24, t),
+    spawnMax: lerp(1.34, 0.54, t),
+    warmup: lerp(3.2, 1.1, t),
+    maxObstacles: Math.round(22 + 28 * t),
+    challengeDuration: lerp(4.4, 2.05, t),
+    firstChallengeMin: lerp(4.8, 2, t),
+    firstChallengeMax: lerp(7.2, 3.4, t),
+    repeatChallengeMin: lerp(5.6, 2.2, t),
+    repeatChallengeMax: lerp(8.2, 4.2, t)
+  };
 }
 
 export function createObstacle(time, difficulty) {
@@ -99,6 +121,10 @@ export function clamp(value, min, max) {
 
 export function randomBetween(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function lerp(a, b, mix) {
+  return a + (b - a) * mix;
 }
 
 function obstacleStart(edge) {

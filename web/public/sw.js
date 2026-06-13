@@ -1,5 +1,5 @@
-const CACHE_NAME = "elastic-duo-v20260613-7";
-const BUILD = "20260613-smooth7";
+const CACHE_NAME = "elastic-duo-v20260613-8";
+const BUILD = "20260613-smooth8";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -19,7 +19,8 @@ const CORE_ASSETS = [
   versioned("./src/settings.js"),
   versioned("./src/smoothing.js"),
   versioned("./src/input.js"),
-  versioned("./src/ui.js")
+  versioned("./src/ui.js"),
+  versioned("./src/audio.js")
 ];
 const CACHE_FIRST = /\.(png|svg|jpg|jpeg|webp|ico)$/i;
 

@@ -11,12 +11,12 @@ export function resolveRenderProfile(prefs = {}) {
   trackFrameCost();
   const mobile = MOBILE_QUERY.matches;
   const lite = prefs.quality === "low" || adaptiveLow || mobile;
-  const dprCap = lite ? (mobile ? 1.15 : 1.35) : 1.6;
+  const dprCap = lite ? (mobile ? 1 : 1.2) : 1.3;
   return {
     full: !lite,
     dpr: Math.min(devicePixelRatio || 1, dprCap),
-    shadows: !lite,
-    trails: !lite,
+    shadows: false,
+    trails: false,
     hints: !lite,
     names: !mobile || !lite,
     bandGlow: !lite
@@ -33,7 +33,13 @@ export function prepareCanvas(canvas, world, profile) {
   }
   const ctx = canvas.getContext("2d", { alpha: false });
   ctx.imageSmoothingEnabled = profile.full;
-  ctx.setTransform(width / world.width, 0, 0, height / world.height, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#070b13";
+  ctx.fillRect(0, 0, width, height);
+  const scale = Math.min(width / world.width, height / world.height);
+  const offsetX = (width - world.width * scale) / 2;
+  const offsetY = (height - world.height * scale) / 2;
+  ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
   return ctx;
 }
 
