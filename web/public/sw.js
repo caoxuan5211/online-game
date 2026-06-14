@@ -1,5 +1,5 @@
-const CACHE_NAME = "elastic-duo-v20260613-18";
-const BUILD = "20260613-smooth18";
+const CACHE_NAME = "elastic-duo-v20260613-19";
+const BUILD = "20260613-smooth19";
 const CORE_ASSETS = [
   "./",
   "./index.html",

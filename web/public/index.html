@@ -7,22 +7,22 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="./assets/background.png" as="image" />
     <link rel="preload" href="/socket.io/socket.io.js" as="script" />
-    <link rel="modulepreload" href="./src/main.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/input.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/prediction.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/smoothing.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/render.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/render-cache.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/render-quality.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/render-utils.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/settings.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/ui.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/audio.js?v=20260613-smooth18" />
-    <link rel="modulepreload" href="./src/preload.js?v=20260613-smooth18" />
+    <link rel="modulepreload" href="./src/main.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/input.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/prediction.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/smoothing.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/render.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/render-cache.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/render-quality.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/render-utils.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/settings.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/ui.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/audio.js?v=20260613-smooth19" />
+    <link rel="modulepreload" href="./src/preload.js?v=20260613-smooth19" />
     <title>Elastic Duo</title>
-    <link rel="stylesheet" href="./styles.css?v=20260613-smooth18" />
-    <link rel="stylesheet" href="./loader.css?v=20260613-smooth18" />
-    <link rel="stylesheet" href="./feedback.css?v=20260613-smooth18" />
+    <link rel="stylesheet" href="./styles.css?v=20260613-smooth19" />
+    <link rel="stylesheet" href="./loader.css?v=20260613-smooth19" />
+    <link rel="stylesheet" href="./feedback.css?v=20260613-smooth19" />
   </head>
   <body>
     <section id="loaderPanel" class="loader-panel" aria-live="polite">
@@ -135,6 +135,10 @@
       <div id="countdownOverlay" class="countdown-overlay hidden" aria-live="polite">
         <span id="countdownNumber">3</span>
       </div>
+      <section class="rotate-tip" aria-label="横屏提示">
+        <strong>横屏游玩</strong>
+        <span>请将手机横过来，画面和摇杆会更宽。</span>
+      </section>
 
       <section class="game-hud">
         <button id="backGameButton" class="circle-button" aria-label="返回主页面">&#8962;</button>
@@ -204,7 +208,7 @@
     </main>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="./config.js?v=20260613-smooth18"></script>
-    <script type="module" src="./src/main.js?v=20260613-smooth18"></script>
+    <script src="./config.js?v=20260613-smooth19"></script>
+    <script type="module" src="./src/main.js?v=20260613-smooth19"></script>
   </body>
 </html>

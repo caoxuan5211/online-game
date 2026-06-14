@@ -42,7 +42,7 @@ input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none
     linear-gradient(90deg, rgba(16, 56, 140, 0.58) 0%, rgba(24, 94, 188, 0.32) 34%, rgba(255,255,255,0.04) 72%, transparent);
 }
 .player-card, .top-settings, .hero-panel, .game-select-panel, .mode-select-panel, .room-panel, .lobby-panel, .countdown-overlay,
-.game-hud, .game-controls, .connection-status, .settings-panel, .help-panel, .joystick {
+.game-hud, .game-controls, .connection-status, .settings-panel, .help-panel, .joystick, .rotate-tip {
   position: fixed; z-index: 4;
 }
 
@@ -234,6 +234,7 @@ input[type="range"] { padding: 0; accent-color: var(--primary); box-shadow: none
   background: rgba(79,104,255,0.58); box-shadow: 0 28px 90px rgba(49,91,220,0.38);
 }
 .joystick { display: none; }
+.rotate-tip { display: none; }
 .stick { width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.82); box-shadow: 0 10px 26px rgba(49,91,220,0.26); }
 .result-panel { right: 28px; bottom: 96px; width: min(340px, calc(100vw - 24px)); display: grid; gap: 9px; padding: 16px; border-radius: 20px; background: rgba(255,255,255,0.78); color: var(--ink); box-shadow: 0 24px 64px rgba(49,91,220,0.22); backdrop-filter: blur(18px); }
 .result-panel strong { font-size: 1.15rem; } .result-panel span { color: #c74735; font-weight: 800; } .result-panel div { display: flex; gap: 8px; }
@@ -301,6 +302,18 @@ canvas {
     border-radius: 50%; background: rgba(255,255,255,0.24); border: 2px solid rgba(255,255,255,0.46);
     touch-action: none; backdrop-filter: blur(10px);
   }
+  .game-mode .rotate-tip {
+    display: none; inset: 0; z-index: 12; place-items: center; padding: 24px;
+    background: rgba(10,16,34,0.82); color: #fff; text-align: center; backdrop-filter: blur(10px);
+  }
+  .rotate-tip strong, .rotate-tip span { display: block; }
+  .rotate-tip strong { font-size: 1.45rem; margin-bottom: 10px; }
+  .rotate-tip span { color: rgba(255,255,255,0.78); line-height: 1.6; }
+}
+
+@media (max-width: 760px) and (orientation: portrait) {
+  .game-mode .rotate-tip { display: grid; }
+  .game-mode .game-hud, .game-mode .game-controls, .game-mode .joystick { opacity: 0.18; pointer-events: none; }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {
@@ -308,6 +321,7 @@ canvas {
   .hero-panel h1 { font-size: clamp(2.4rem, 9vw, 4rem); }
   .start-button { min-height: 64px; }
   .game-select-panel, .mode-select-panel, .room-panel, .lobby-panel { top: 10px; bottom: 10px; left: 12px; width: min(520px, calc(100vw - 24px)); overflow: auto; transform: none; }
-  .game-mode .joystick { width: 116px; height: 116px; bottom: 48px; }
-  .game-mode .game-controls { right: 10px; bottom: 8px; }
+  .game-mode .game-hud { top: max(8px, env(safe-area-inset-top)); padding: 6px 10px; }
+  .game-mode .joystick { width: 124px; height: 124px; bottom: 46px; }
+  .game-mode .game-controls { left: 10px; right: 10px; bottom: 8px; }
 }
