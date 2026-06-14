@@ -322,10 +322,6 @@ canvas {
   .start-button { min-height: 64px; }
   .game-select-panel, .mode-select-panel, .room-panel, .lobby-panel { top: 10px; bottom: 10px; left: 12px; width: min(520px, calc(100vw - 24px)); overflow: auto; transform: none; }
   .game-mode .game-hud { top: max(8px, env(safe-area-inset-top)); padding: 6px 10px; }
-  .game-mode .joystick {
-    display: grid; place-items: center; left: 18px; width: 124px; height: 124px; bottom: 46px;
-    border-radius: 50%; background: rgba(255,255,255,0.24); border: 2px solid rgba(255,255,255,0.46);
-    touch-action: none; backdrop-filter: blur(10px);
-  }
+  .game-mode .joystick { display: grid; place-items: center; left: 18px; width: 124px; height: 124px; bottom: 46px; border-radius: 50%; background: rgba(255,255,255,0.24); border: 2px solid rgba(255,255,255,0.46); touch-action: none; backdrop-filter: blur(10px); }
   .game-mode .game-controls { left: 10px; right: 10px; bottom: 8px; }
 }
